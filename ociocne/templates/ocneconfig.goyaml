@@ -1,0 +1,28 @@
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: OcneConfigTemplate
+metadata:
+  name:  {{.Name}}-md-0
+  namespace: {{.Namespace}}
+spec:
+  template:
+    spec:
+{{- if .ProxyEndpoint }}
+      proxy: {{.ProxyEndpoint}}
+{{- end }}
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: {{.ProviderId}}
+      {{- if .PreOCNECommands }}
+      preOcneCommands:
+      {{- range .PreOCNECommands }}
+        - {{.}}
+      {{- end }}
+      {{- end }}
+      {{- if .PostOCNECommands }}
+      postOcneCommands:
+      {{- range .PostOCNECommands }}
+        - {{.}}
+      {{- end }}
+      {{- end }}

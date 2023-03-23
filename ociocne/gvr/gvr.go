@@ -1,0 +1,63 @@
+// Copyright (c) 2023, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package gvr
+
+import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+const (
+	ControlPlaneXK8sIO   = "controlplane.cluster.x-k8s.io"
+	InfrastructureXK8sIO = "infrastructure.cluster.x-k8s.io"
+	ClusterXK8sIO        = "cluster.x-k8s.io"
+	V1Beta1Version       = "v1beta1"
+)
+
+var MachineDeployment = schema.GroupVersionResource{
+	Group:    ClusterXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "machinedeployments",
+}
+
+var Cluster = schema.GroupVersionResource{
+	Group:    ClusterXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "clusters",
+}
+
+var OCICluster = schema.GroupVersionResource{
+	Group:    InfrastructureXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "ociclusters",
+}
+
+var KubeadmControlPlane = schema.GroupVersionResource{
+	Group:    ControlPlaneXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "ocnecontrolplanes",
+}
+
+var OCIMachineTemplate = schema.GroupVersionResource{
+	Group:    InfrastructureXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "ocimachinetemplates",
+}
+
+var KubeadmConfigTemplate = schema.GroupVersionResource{
+	Group:    "bootstrap.cluster.x-k8s.io",
+	Version:  "v1beta1",
+	Resource: "ocneconfigtemplates",
+}
+
+var ClusterResourceSet = schema.GroupVersionResource{
+	Group:    "addons.cluster.x-k8s.io",
+	Version:  V1Beta1Version,
+	Resource: "clusterresourcesets",
+}
+
+var ConfigMap = schema.GroupVersionResource{
+	Group:    "",
+	Version:  "v1",
+	Resource: "configmaps",
+}
