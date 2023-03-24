@@ -31,6 +31,9 @@ const (
 	ETCDImageTag         = "etcd-image-tag"
 	CoreDNSImageTag      = "core-dns-image-tag"
 	ControlPlaneRegistry = "control-plane-registry"
+	CalicoRegistry       = "calico-image-registry"
+	CalicoTag            = "calico-image-tag"
+	CCMImage             = "ccm-image"
 
 	ProxyEndpoint = "proxy-endpoint"
 

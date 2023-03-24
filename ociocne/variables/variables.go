@@ -27,9 +27,11 @@ const (
 	DefaultVMShape                 = "VM.Standard.E4.Flex"
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
-	DefaultControlPlaneRegistry = "container-registry.oracle.com/olcne"
-	DefaultETCDImageTag         = "3.5.3"
-	DefaultCoreDNSImageTag      = "1.8.6"
+	DefaultRegistryCNE     = "container-registry.oracle.com/olcne"
+	DefaultETCDImageTag    = "3.5.3"
+	DefaultCoreDNSImageTag = "1.8.6"
+	DefaultCalicoTag       = "v3.25.0"
+	DefaultCCMImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 )
 
 const (
@@ -78,8 +80,12 @@ type (
 		PreOCNECommands         []string
 		PostOCNECommands        []string
 		ControlPlaneRegistry    string
+		CalicoRegistry          string
+		CalicoTag               string
 		ETCDImageTag            string
 		CoreDNSImageTag         string
+		CCMImage                string
+		CSIRegistry             string
 
 		ProviderId string
 		// OCI Auth is loaded from the CAPI Provider
@@ -118,6 +124,9 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		PodCIDR:                 options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PodCIDR, "podCidr").(string),
 		ClusterCIDR:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterCIDR, "clusterCidr").(string),
 		ControlPlaneRegistry:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
+		CalicoRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
+		CalicoTag:               options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoTag, "calicoImageTag").(string),
+		CCMImage:                options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
 		ETCDImageTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
 		CoreDNSImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
 		ProxyEndpoint:           options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),

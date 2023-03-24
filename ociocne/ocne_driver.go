@@ -106,7 +106,28 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The registry to use for control plane images",
 		Default: &types.Default{
-			DefaultString: variables.DefaultControlPlaneRegistry,
+			DefaultString: variables.DefaultRegistryCNE,
+		},
+	}
+	driverFlag.Options[driverconst.CalicoRegistry] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The registry to use for calico cni images",
+		Default: &types.Default{
+			DefaultString: variables.DefaultRegistryCNE,
+		},
+	}
+	driverFlag.Options[driverconst.CalicoTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The image tag for calico images",
+		Default: &types.Default{
+			DefaultString: variables.DefaultCalicoTag,
+		},
+	}
+	driverFlag.Options[driverconst.CCMImage] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The image for OCI cloud-controller-manager",
+		Default: &types.Default{
+			DefaultString: variables.DefaultCCMImage,
 		},
 	}
 	driverFlag.Options[driverconst.ETCDImageTag] = &types.Flag{
