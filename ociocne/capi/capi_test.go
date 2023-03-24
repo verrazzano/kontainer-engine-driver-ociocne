@@ -4,8 +4,8 @@
 package capi
 
 import (
-	"github.com/rancher-plugins/kontainer-engine-driver-oke/ociocne/variables"
 	"github.com/stretchr/testify/assert"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
 	"testing"
 )
 

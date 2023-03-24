@@ -6,13 +6,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/rancher-plugins/kontainer-engine-driver-oke/ociocne/k8s"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/k8s"
 	"os"
 	"strconv"
 	"sync"
 
-	"github.com/rancher-plugins/kontainer-engine-driver-oke/ociocne"
 	"github.com/rancher/kontainer-engine/types"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne"
 	"go.uber.org/zap"
 )
 

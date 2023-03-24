@@ -1,0 +1,62 @@
+==================
+
+Dependencies:
+-----------------------
+
+github.com/
+  davecgh/go-spew v1.1.1
+  emicklei/go-restful/v3 v3.9.0
+  go-logr/logr v1.2.3
+  go-openapi/jsonpointer v0.19.5
+  go-openapi/jsonreference v0.20.0
+  go-openapi/swag v0.19.14
+  gofrs/flock v0.8.1
+  gogo/protobuf v1.3.2
+  golang/protobuf v1.5.2
+  google/gnostic v0.5.7-v3refs
+  google/go-cmp v0.5.9
+  google/gofuzz v1.1.0
+  imdario/mergo v0.3.7
+  josharian/intern v1.0.0
+  json-iterator/go v1.1.12
+  mailru/easyjson v0.7.6
+  modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+  modern-go/reflect2 v1.0.2
+  munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
+  oracle/oci-go-sdk/v65 v65.32.0
+  rancher/kontainer-engine v0.0.0-20190711161432-b98bad2201bb
+  rancher/rke v0.2.8
+  sirupsen/logrus v1.8.1
+  sony/gobreaker v0.5.0
+  spf13/pflag v1.0.5
+  urfave/cli v1.21.0
+go.uber.org/
+  atomic v1.7.0
+  multierr v1.6.0
+  zap v1.21.0
+golang.org/
+  x/net v0.2.0
+  x/oauth2 v0.0.0-20220223155221-ee480838109b
+  x/sys v0.3.0
+  x/term v0.3.0
+  x/text v0.5.0
+  x/time v0.3.0
+google.golang.org/
+  genproto v0.0.0-20220502173005-c8bf987b8c21
+  grpc v1.49.0
+  protobuf v1.28.1
+gopkg.in/
+  inf.v0 v0.9.1
+  yaml.v2 v2.4.0
+  yaml.v3 v3.0.1
+k8s.io/
+  api v0.25.4
+  apimachinery v0.25.4
+  client-go v0.25.4
+  klog/v2 v2.80.1
+  kube-openapi v0.0.0-20221012153701-172d655c2280
+  utils v0.0.0-20221128185143-99ec85e7a448
+sigs.k8s.io/
+  json v0.0.0-20220713155537-f223a00ba0e2
+  structured-merge-diff/v4 v4.2.3
+  yaml v1.3.0

@@ -61,7 +61,7 @@ update-build:
 #
 .PHONY: unit-test
 unit-test: go-install
-	go test -v ./oke
+	go test -v ./ociocne
 
 .PHONY: integ-test
 integ-test: go-install
