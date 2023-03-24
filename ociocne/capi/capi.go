@@ -48,6 +48,7 @@ var objects = []object{
 	{gvr.OCIMachineTemplate, templates.OCIControlPlaneMachineTemplate},
 }
 
+//CreateOrUpdateAllObjects creates or updates all cluster objects
 func CreateOrUpdateAllObjects(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
 	for _, o := range objects {
 		if err := createOrUpdateObject(ctx, client, o, v); err != nil {
@@ -57,6 +58,7 @@ func CreateOrUpdateAllObjects(ctx context.Context, client dynamic.Interface, v *
 	return nil
 }
 
+//CreateOrUpdateNodeGroup creates or updates the worker node group replica count
 func CreateOrUpdateNodeGroup(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
 	return createOrUpdateObject(ctx, client, object{
 		gvr.MachineDeployment,
@@ -87,6 +89,7 @@ func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o objec
 	return err
 }
 
+//DeleteCluster deletes the cluster
 func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
 	deleteFromTmpl := func(o object) error {
 		u, err := loadTextTemplate(o, *v)
@@ -101,6 +104,7 @@ func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.V
 	})
 }
 
+//WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status
 func WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
 	endTime := time.Now().Add(clusterCreationTimeout)
 	for {

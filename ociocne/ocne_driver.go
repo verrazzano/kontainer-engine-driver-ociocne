@@ -414,6 +414,7 @@ func (d *OCIOCNEDriver) SetClusterSize(ctx context.Context, info *types.ClusterI
 	return nil
 }
 
+// SetVersion sets the Kubernetes Version of cluster
 func (d *OCIOCNEDriver) SetVersion(ctx context.Context, info *types.ClusterInfo, version *types.KubernetesVersion) error {
 	d.Logger.Infof("capi.driver.SetVersion(...) called")
 	_, err := d.loadVariables(info)

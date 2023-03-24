@@ -54,6 +54,7 @@ type Subnet struct {
 }
 
 type (
+	//Variables are parameters for cluster lifecycle operations
 	Variables struct {
 		Name                    string
 		Namespace               string
@@ -101,6 +102,7 @@ type (
 	}
 )
 
+// NewFromOptions creates a new Variables given *types.DriverOptions
 func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*Variables, error) {
 	v := &Variables{
 		Name:                    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
@@ -141,11 +143,13 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	return v, nil
 }
 
+// SetUpdateOptions sets update options in the Variables
 func (v *Variables) SetUpdateOptions(driverOptions *types.DriverOptions) {
 	v.ControlPlaneReplicas = options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumControlPlaneNodes, "numControlPlaneNodes").(int64)
 	v.NodeReplicas = options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumWorkerNodes, "numWorkerNodes").(int64)
 }
 
+// SetDynamicValues sets dynamic values from OCI in the Variables
 func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	client, err := k8s.NewInterface()
 	if err != nil {
@@ -161,6 +165,7 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	return v.setSubnets(ctx, ociClient)
 }
 
+// GetConfigurationProvider creates a new configuration provider from Variables
 func (v *Variables) GetConfigurationProvider() common.ConfigurationProvider {
 	var passphrase *string
 	if len(v.PrivateKeyPassphrase) > 0 {
@@ -189,18 +194,21 @@ func (v *Variables) GetCAPIClusterKubeConfig(ctx context.Context, state *Variabl
 	return kubeconfig, nil
 }
 
+// NodeCount is the sum of worker and control plane nodes
 func (v *Variables) NodeCount() *types.NodeCount {
 	return &types.NodeCount{
 		Count: v.NodeReplicas + v.ControlPlaneReplicas,
 	}
 }
 
+// Version is the cluster Kubernetes version
 func (v *Variables) Version() *types.KubernetesVersion {
 	return &types.KubernetesVersion{
 		Version: v.KubernetesVersion,
 	}
 }
 
+// Validate asserts values are acceptable for cluster lifecycle operations
 func (v *Variables) Validate() error {
 	return nil
 }
@@ -266,6 +274,7 @@ func getSubnetById(ctx context.Context, client oci.Client, subnetId, role string
 	}, nil
 }
 
+// LoadOCIAuth dynamically loads OCI authentication
 func LoadOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables) error {
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {

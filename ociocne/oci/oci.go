@@ -10,17 +10,20 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
+// Client interface for OCI Clients
 type Client interface {
 	GetSubnetById(context.Context, string) (*core.Subnet, error)
 	GetImageOCIDByName(context.Context, string, string) (string, error)
 }
 
+// ClientImpl OCI Client implementation
 type ClientImpl struct {
 	vnClient              core.VirtualNetworkClient
 	computeClient         core.ComputeClient
 	configurationProvider common.ConfigurationProvider
 }
 
+// NewClient creates a new OCI Client
 func NewClient(provider common.ConfigurationProvider) (Client, error) {
 	net, err := core.NewVirtualNetworkClientWithConfigurationProvider(provider)
 	if err != nil {
@@ -38,6 +41,7 @@ func NewClient(provider common.ConfigurationProvider) (Client, error) {
 	}, nil
 }
 
+// GetImageOCIDByName retrieves an image OCID given an image name and a compartment id, if that image exists.
 func (c *ClientImpl) GetImageOCIDByName(ctx context.Context, imageName, compartmentId string) (string, error) {
 	images, err := c.computeClient.ListImages(ctx, core.ListImagesRequest{
 		CompartmentId: &compartmentId,
@@ -52,6 +56,7 @@ func (c *ClientImpl) GetImageOCIDByName(ctx context.Context, imageName, compartm
 	return *images.Items[0].Id, nil
 }
 
+// GetSubnetById retrieves a subnet given that subnet's Id.
 func (c *ClientImpl) GetSubnetById(ctx context.Context, subnetId string) (*core.Subnet, error) {
 	if len(subnetId) == 0 {
 		return nil, nil

@@ -16,6 +16,7 @@ const (
 	injectedKubeConfig = "INJECTED_KUBECONFIG"
 )
 
+// MustSetKubeconfigFromEnv sets the current kubeconfig from the environment. If the kubeconfig cannot be set, panic.
 func MustSetKubeconfigFromEnv() {
 	val := os.Getenv(injectedKubeConfig)
 
@@ -33,6 +34,7 @@ func MustSetKubeconfigFromEnv() {
 
 var InjectedKubeConfig []byte
 
+// NewInterfaceForKubeconfig creates a kubernetes.Interface given a kubeconfig string
 func NewInterfaceForKubeconfig(kubeconfig string) (kubernetes.Interface, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
 	if err != nil {
@@ -41,6 +43,7 @@ func NewInterfaceForKubeconfig(kubeconfig string) (kubernetes.Interface, error) 
 	return kubernetes.NewForConfig(config)
 }
 
+// NewInterface creates a new kubernetes.Interface using the injected kubeconfig
 func NewInterface() (kubernetes.Interface, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig(InjectedKubeConfig)
 	if err != nil {
@@ -49,6 +52,7 @@ func NewInterface() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(config)
 }
 
+// NewDynamic creates a new dynamic.Interface using the injected kubeconfig
 func NewDynamic() (dynamic.Interface, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig(InjectedKubeConfig)
 	if err != nil {
