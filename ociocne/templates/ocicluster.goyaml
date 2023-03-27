@@ -1,0 +1,28 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OCICluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name:  {{.Name}}
+  name:  {{.Name}}
+  namespace: {{.Namespace}}
+spec:
+  compartmentId:  {{.CompartmentID}}
+{{- if .VCNID }}
+  networkSpec:
+    skipNetworkManagement: true
+    vcn:
+      id:  {{.VCNID}}
+      {{- if .Subnets }}
+      subnets:
+        {{- range .Subnets }}
+        - id:  {{.Id}}
+          role: {{.Role}}
+          name: {{.Name}}
+          cidr: {{.CIDR}}
+          type: {{.Type}}
+        {{- end }}
+      {{- end }}
+{{- end }}
