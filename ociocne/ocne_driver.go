@@ -194,9 +194,9 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultInt: 3,
 		},
 	}
-	driverFlag.Options[driverconst.NodeImage] = &types.Flag{
+	driverFlag.Options[driverconst.ImageDisplayName] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The OS for the node image",
+		Usage: "Image for cluster nodes",
 	}
 	driverFlag.Options[driverconst.CompartmentID] = &types.Flag{
 		Type:  types.StringType,

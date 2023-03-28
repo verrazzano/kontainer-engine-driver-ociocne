@@ -60,6 +60,7 @@ type (
 		Namespace               string
 		CompartmentID           string
 		ImageID                 string
+		ImageDisplayName        string
 		VCNID                   string
 		WorkerNodeSubnet        string
 		ControlPlaneSubnet      string
@@ -107,7 +108,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	v := &Variables{
 		Name:                    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
 		CompartmentID:           options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CompartmentID, "compartmentId").(string),
-		ImageID:                 options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodeImage, "nodeImage").(string),
+		ImageDisplayName:        options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImageDisplayName, "imageDisplayName").(string),
 		VCNID:                   options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VcnID, "vcnId").(string),
 		WorkerNodeSubnet:        options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.WorkerNodeSubnet, "workerNodeSubnet").(string),
 		LoadBalancerSubnet:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.LoadBalancerSubnet, "loadBalancerSubnet").(string),
@@ -162,6 +163,9 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if err := v.setImageId(ctx, ociClient); err != nil {
+		return err
+	}
 	return v.setSubnets(ctx, ociClient)
 }
 
@@ -210,6 +214,15 @@ func (v *Variables) Version() *types.KubernetesVersion {
 
 // Validate asserts values are acceptable for cluster lifecycle operations
 func (v *Variables) Validate() error {
+	return nil
+}
+
+func (v *Variables) setImageId(ctx context.Context, client oci.Client) error {
+	imageId, err := client.GetImageIdByName(ctx, v.ImageDisplayName, v.CompartmentID)
+	if err != nil {
+		return err
+	}
+	v.ImageID = imageId
 	return nil
 }
 
