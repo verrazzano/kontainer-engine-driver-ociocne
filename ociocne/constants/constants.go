@@ -16,7 +16,7 @@ const (
 	UsePVNodeEncryption = "use-node-pv-encryption"
 	PodCIDR             = "pod-cidr"
 	ClusterCIDR         = "cluster-cidr"
-	NodeImage           = "node-image"
+	ImageDisplayName    = "image-display-name"
 
 	NumWorkerNodes = "num-worker-nodes"
 	NodeShape      = "node-shape"

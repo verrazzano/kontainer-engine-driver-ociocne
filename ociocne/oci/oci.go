@@ -13,7 +13,7 @@ import (
 // Client interface for OCI Clients
 type Client interface {
 	GetSubnetById(context.Context, string) (*core.Subnet, error)
-	GetImageOCIDByName(context.Context, string, string) (string, error)
+	GetImageIdByName(ctx context.Context, displayName, compartmentId string) (string, error)
 }
 
 // ClientImpl OCI Client implementation
@@ -41,17 +41,17 @@ func NewClient(provider common.ConfigurationProvider) (Client, error) {
 	}, nil
 }
 
-// GetImageOCIDByName retrieves an image OCID given an image name and a compartment id, if that image exists.
-func (c *ClientImpl) GetImageOCIDByName(ctx context.Context, imageName, compartmentId string) (string, error) {
+// GetImageIdByName retrieves an image OCID given an image name and a compartment id, if that image exists.
+func (c *ClientImpl) GetImageIdByName(ctx context.Context, displayName, compartmentId string) (string, error) {
 	images, err := c.computeClient.ListImages(ctx, core.ListImagesRequest{
 		CompartmentId: &compartmentId,
-		DisplayName:   &imageName,
+		DisplayName:   &displayName,
 	})
 	if err != nil {
 		return "", err
 	}
 	if len(images.Items) < 1 {
-		return "", fmt.Errorf("no images found for %s/%s", compartmentId, imageName)
+		return "", fmt.Errorf("no images found for %s/%s", compartmentId, displayName)
 	}
 	return *images.Items[0].Id, nil
 }
