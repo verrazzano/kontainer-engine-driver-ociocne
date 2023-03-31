@@ -35,9 +35,8 @@ const (
 )
 
 const (
-	kubeconfigName = "%s-kubeconfig"
-	namespace      = "cluster-api-provider-oci-system"
-	name           = "capoci-auth-config"
+	kubeconfigName   = "%s-kubeconfig"
+	CAPIOCINamespace = "cluster-api-provider-oci-system"
 
 	loadBalancerSubnetRole         = "service-lb"
 	controlPlaneSubnetRole         = "control-plane"
@@ -56,9 +55,9 @@ type Subnet struct {
 type (
 	//Variables are parameters for cluster lifecycle operations
 	Variables struct {
-		Name                    string
-		Namespace               string
-		CompartmentID           string
+		Name      string
+		Namespace string
+
 		ImageID                 string
 		ImageDisplayName        string
 		VCNID                   string
@@ -88,9 +87,13 @@ type (
 		CoreDNSImageTag         string
 		CCMImage                string
 		CSIRegistry             string
+		ProviderId              string
 
-		ProviderId string
-		// OCI Auth is loaded from the CAPI Provider
+		CAPIOCINamespace   string
+		CAPICredentialName string
+
+		CloudCredentialId    string
+		CompartmentID        string
 		Fingerprint          string
 		PrivateKey           string
 		PrivateKeyPassphrase string
@@ -107,6 +110,12 @@ type (
 func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*Variables, error) {
 	v := &Variables{
 		Name:                    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
+		CloudCredentialId:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.SecretName, "cloudCredentialId").(string),
+		User:                    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.UserId, "userId").(string),
+		Tenancy:                 options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TenancyId, "tenancyId").(string),
+		Fingerprint:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.Fingerprint, "fingerprint").(string),
+		PrivateKey:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateKeyContents, "privateKeyContents").(string),
+		Region:                  options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.Region, "region").(string),
 		CompartmentID:           options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CompartmentID, "compartmentId").(string),
 		ImageDisplayName:        options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImageDisplayName, "imageDisplayName").(string),
 		VCNID:                   options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VcnID, "vcnId").(string),
@@ -136,8 +145,10 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		PreOCNECommands:         options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PreOCNECommands, "preOcneCommands").(*types.StringSlice).Value,
 		PostOCNECommands:        options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PostOCNECommands, "postOcneCommands").(*types.StringSlice).Value,
 		ProviderId:              ProviderId,
+		CAPIOCINamespace:        CAPIOCINamespace,
 	}
 	v.Namespace = v.Name
+
 	if err := v.SetDynamicValues(ctx); err != nil {
 		return v, err
 	}
@@ -156,7 +167,7 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := LoadOCIAuth(ctx, client, v); err != nil {
+	if err := SetupOCIAuth(ctx, client, v); err != nil {
 		return err
 	}
 	ociClient, err := oci.NewClient(v.GetConfigurationProvider())
@@ -287,18 +298,31 @@ func getSubnetById(ctx context.Context, client oci.Client, subnetId, role string
 	}, nil
 }
 
-// LoadOCIAuth dynamically loads OCI authentication
-func LoadOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables) error {
-	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+// SetupOCIAuth dynamically loads OCI authentication
+func SetupOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables) error {
+	ccName, ccNamespace := v.cloudCredentialNameAndNamespace()
+	cc, err := client.CoreV1().Secrets(ccNamespace).Get(ctx, ccName, metav1.GetOptions{})
+	// Failed to retrieve cloud credentials
 	if err != nil {
 		return err
 	}
 
-	v.Fingerprint = string(secret.Data["fingerprint"])
-	v.PrivateKey = strings.Replace(string(secret.Data["key"]), "\n", "\\n", -1)
-	v.PrivateKeyPassphrase = string(secret.Data["passphrase"])
-	v.Region = string(secret.Data["region"])
-	v.Tenancy = string(secret.Data["tenancy"])
-	v.User = string(secret.Data["user"])
+	v.CAPICredentialName = ccName
+	v.User = string(cc.Data["ocicredentialConfig-userId"])
+	v.Fingerprint = string(cc.Data["ocicredentialConfig-fingerprint"])
+	v.Tenancy = string(cc.Data["ocicredentialConfig-tenancyId"])
+	// TODO: Support private key passphrase in cloud credentials
+	v.PrivateKeyPassphrase = ""
+	v.PrivateKey = string(cc.Data["ocicredentialConfig-privateKeyContents"])
+	v.PrivateKey = strings.Replace(v.PrivateKey, "\n", "\\n", -1)
 	return nil
+}
+
+func (v *Variables) cloudCredentialNameAndNamespace() (string, string) {
+	split := strings.Split(v.CloudCredentialId, ":")
+
+	if len(split) == 1 {
+		return "cattle-global-data", split[0]
+	}
+	return split[1], split[0]
 }

@@ -32,6 +32,12 @@ var OCICluster = schema.GroupVersionResource{
 	Resource: "ociclusters",
 }
 
+var ClusterIdentity = schema.GroupVersionResource{
+	Group:    InfrastructureXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "ociclusteridentities",
+}
+
 var KubeadmControlPlane = schema.GroupVersionResource{
 	Group:    ControlPlaneXK8sIO,
 	Version:  V1Beta1Version,
