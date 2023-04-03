@@ -166,14 +166,14 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.IntType,
 		Usage: "Optional amount of memory (in GBs) for worker nodes",
 		Default: &types.Default{
-			DefaultInt: variables.DefaultMemoryGBs,
+			DefaultInt: variables.DefaultMemoryGbs,
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneMemoryGbs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional amount of memory (in GBs) for control plane nodes",
 		Default: &types.Default{
-			DefaultInt: variables.DefaultMemoryGBs,
+			DefaultInt: variables.DefaultMemoryGbs,
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneVolumeGbs] = &types.Flag{

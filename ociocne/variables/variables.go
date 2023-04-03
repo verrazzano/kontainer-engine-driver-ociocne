@@ -22,8 +22,8 @@ import (
 
 const (
 	DefaultOCICPUs                 = 2
-	DefaultMemoryGBs               = 16
-	DefaultVolumeGbs               = 50
+	DefaultMemoryGbs               = 16
+	DefaultVolumeGbs               = 100
 	DefaultNodePVTransitEncryption = true
 	DefaultVMShape                 = "VM.Standard.E4.Flex"
 	ProviderId                     = `oci://{{ ds["id"] }}`
