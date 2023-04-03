@@ -9,6 +9,7 @@ metadata:
 spec:
   template:
     spec:
+      bootVolumeSizeInGBs: "{{.NodeVolumeGbs}}"
       compartmentId:  {{.CompartmentID}}
       imageId:  {{.ImageID}}
       isPvEncryptionInTransitEnabled: {{.NodePVTransitEncryption}}

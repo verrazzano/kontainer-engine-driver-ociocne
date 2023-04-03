@@ -166,14 +166,21 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.IntType,
 		Usage: "Optional amount of memory (in GBs) for worker nodes",
 		Default: &types.Default{
-			DefaultInt: variables.DefaultMemoryGB,
+			DefaultInt: variables.DefaultMemoryGBs,
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneMemoryGbs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional amount of memory (in GBs) for control plane nodes",
 		Default: &types.Default{
-			DefaultInt: variables.DefaultMemoryGB,
+			DefaultInt: variables.DefaultMemoryGBs,
+		},
+	}
+	driverFlag.Options[driverconst.ControlPlaneVolumeGbs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Volume size of control plane nodes in Gbs",
+		Default: &types.Default{
+			DefaultInt: 50,
 		},
 	}
 	driverFlag.Options[driverconst.NodePublicKeyContents] = &types.Flag{
@@ -192,6 +199,13 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Usage: "Number of worker nodes, default 3.",
 		Default: &types.Default{
 			DefaultInt: 3,
+		},
+	}
+	driverFlag.Options[driverconst.NodeVolumeGbs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Volume size of worker nodes in Gbs",
+		Default: &types.Default{
+			DefaultInt: 50,
 		},
 	}
 	driverFlag.Options[driverconst.ImageDisplayName] = &types.Flag{
