@@ -22,11 +22,13 @@ const (
 	NodeShape      = "node-shape"
 	NodeOCPUs      = "node-ocpus"
 	NodeMemoryGbs  = "node-memory-gbs"
+	NodeVolumeGbs  = "node-volume-gbs"
 
 	ControlPlaneOCPUs     = "control-plane-ocpus"
 	NumControlPlaneNodes  = "num-control-plane-nodes"
 	ControlPlaneMemoryGbs = "control-plane-memory-gbs"
 	ControlPlaneShape     = "control-plane-shape"
+	ControlPlaneVolumeGbs = "control-plane-volume-gbs"
 
 	ETCDImageTag         = "etcd-image-tag"
 	CoreDNSImageTag      = "core-dns-image-tag"

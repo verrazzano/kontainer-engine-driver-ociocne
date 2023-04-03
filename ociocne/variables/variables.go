@@ -22,7 +22,8 @@ import (
 
 const (
 	DefaultOCICPUs                 = 2
-	DefaultMemoryGB                = 16
+	DefaultMemoryGbs               = 16
+	DefaultVolumeGbs               = 100
 	DefaultNodePVTransitEncryption = true
 	DefaultVMShape                 = "VM.Standard.E4.Flex"
 	ProviderId                     = `oci://{{ ds["id"] }}`
@@ -74,7 +75,9 @@ type (
 		NodeOCPUs               int64
 		ControlPlaneOCPUs       int64
 		NodeMemoryGbs           int64
+		NodeVolumeGbs           int64
 		ControlPlaneMemoryGbs   int64
+		ControlPlaneVolumeGbs   int64
 		PodCIDR                 string
 		ClusterCIDR             string
 		ProxyEndpoint           string
@@ -109,43 +112,51 @@ type (
 // NewFromOptions creates a new Variables given *types.DriverOptions
 func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*Variables, error) {
 	v := &Variables{
-		Name:                    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
-		CloudCredentialId:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.SecretName, "cloudCredentialId").(string),
-		User:                    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.UserId, "userId").(string),
-		Tenancy:                 options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TenancyId, "tenancyId").(string),
-		Fingerprint:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.Fingerprint, "fingerprint").(string),
-		PrivateKey:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateKeyContents, "privateKeyContents").(string),
-		Region:                  options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.Region, "region").(string),
-		CompartmentID:           options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CompartmentID, "compartmentId").(string),
+		Name:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
+		KubernetesVersion: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.KubernetesVersion, "kubernetesVersion").(string),
+
+		// User and authentication
+		SSHPublicKey:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodePublicKeyContents, "nodePublicKeyContents").(string),
+		CloudCredentialId: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.SecretName, "cloudCredentialId").(string),
+		Region:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.Region, "region").(string),
+		CompartmentID:     options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CompartmentID, "compartmentId").(string),
+
+		// Networking
+		VCNID:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VcnID, "vcnId").(string),
+		WorkerNodeSubnet:   options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.WorkerNodeSubnet, "workerNodeSubnet").(string),
+		LoadBalancerSubnet: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.LoadBalancerSubnet, "loadBalancerSubnet").(string),
+		ControlPlaneSubnet: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneSubnet, "controlPlaneSubnet").(string),
+		PodCIDR:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PodCIDR, "podCidr").(string),
+		ClusterCIDR:        options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterCIDR, "clusterCidr").(string),
+
+		// VM settings
 		ImageDisplayName:        options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImageDisplayName, "imageDisplayName").(string),
-		VCNID:                   options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VcnID, "vcnId").(string),
-		WorkerNodeSubnet:        options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.WorkerNodeSubnet, "workerNodeSubnet").(string),
-		LoadBalancerSubnet:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.LoadBalancerSubnet, "loadBalancerSubnet").(string),
-		ControlPlaneSubnet:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneSubnet, "controlPlaneSubnet").(string),
-		SSHPublicKey:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodePublicKeyContents, "nodePublicKeyContents").(string),
-		ControlPlaneReplicas:    options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumControlPlaneNodes, "numControlPlaneNodes").(int64),
-		NodeReplicas:            options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumWorkerNodes, "numWorkerNodes").(int64),
 		NodePVTransitEncryption: options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.UsePVNodeEncryption, "useNodePVEncryption").(bool),
-		NodeShape:               options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodeShape, "nodeShape").(string),
+		ControlPlaneReplicas:    options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumControlPlaneNodes, "numControlPlaneNodes").(int64),
 		ControlPlaneShape:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneShape, "controlPlaneShape").(string),
-		KubernetesVersion:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.KubernetesVersion, "kubernetesVersion").(string),
-		NodeOCPUs:               options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeOCPUs, "nodeOcpus").(int64),
 		ControlPlaneOCPUs:       options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneOCPUs, "controlPlaneOcpus").(int64),
-		NodeMemoryGbs:           options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeMemoryGbs, "nodeMemoryGbs").(int64),
 		ControlPlaneMemoryGbs:   options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneMemoryGbs, "controlPlaneMemoryGbs").(int64),
-		PodCIDR:                 options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PodCIDR, "podCidr").(string),
-		ClusterCIDR:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterCIDR, "clusterCidr").(string),
-		ControlPlaneRegistry:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
-		CalicoRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
-		CalicoTag:               options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoTag, "calicoImageTag").(string),
-		CCMImage:                options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
-		ETCDImageTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
-		CoreDNSImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
-		ProxyEndpoint:           options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),
-		PreOCNECommands:         options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PreOCNECommands, "preOcneCommands").(*types.StringSlice).Value,
-		PostOCNECommands:        options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PostOCNECommands, "postOcneCommands").(*types.StringSlice).Value,
-		ProviderId:              ProviderId,
-		CAPIOCINamespace:        CAPIOCINamespace,
+		ControlPlaneVolumeGbs:   options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneVolumeGbs, "controlPlaneVolumeGbs").(int64),
+		NodeReplicas:            options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumWorkerNodes, "numWorkerNodes").(int64),
+		NodeShape:               options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodeShape, "nodeShape").(string),
+		NodeOCPUs:               options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeOCPUs, "nodeOcpus").(int64),
+		NodeMemoryGbs:           options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeMemoryGbs, "nodeMemoryGbs").(int64),
+		NodeVolumeGbs:           options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeVolumeGbs, "nodeVolumeGbs").(int64),
+
+		// Image settings
+		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
+		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
+		CalicoTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoTag, "calicoImageTag").(string),
+		CCMImage:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
+		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
+		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
+
+		// Other
+		ProxyEndpoint:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),
+		PreOCNECommands:  options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PreOCNECommands, "preOcneCommands").(*types.StringSlice).Value,
+		PostOCNECommands: options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PostOCNECommands, "postOcneCommands").(*types.StringSlice).Value,
+		ProviderId:       ProviderId,
+		CAPIOCINamespace: CAPIOCINamespace,
 	}
 	v.Namespace = v.Name
 
