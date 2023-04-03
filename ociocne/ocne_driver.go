@@ -180,7 +180,7 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.IntType,
 		Usage: "Volume size of control plane nodes in Gbs",
 		Default: &types.Default{
-			DefaultInt: 50,
+			DefaultInt: variables.DefaultVolumeGbs,
 		},
 	}
 	driverFlag.Options[driverconst.NodePublicKeyContents] = &types.Flag{
@@ -205,7 +205,7 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.IntType,
 		Usage: "Volume size of worker nodes in Gbs",
 		Default: &types.Default{
-			DefaultInt: 50,
+			DefaultInt: variables.DefaultVolumeGbs,
 		},
 	}
 	driverFlag.Options[driverconst.ImageDisplayName] = &types.Flag{
