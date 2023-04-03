@@ -11,6 +11,7 @@ import (
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -40,6 +43,7 @@ var objects = []object{
 	{gvr.ClusterResourceSet, templates.CCMResourceSet},
 	{gvr.ClusterResourceSet, templates.CSIResourceSet},
 	{gvr.Cluster, templates.Cluster},
+	{gvr.ClusterIdentity, templates.ClusterIdentity},
 	{gvr.OCICluster, templates.OCICluster},
 	{gvr.KubeadmConfigTemplate, templates.OCNEConfigTemplate},
 	{gvr.KubeadmControlPlane, templates.OCNEControlPlane},
@@ -48,17 +52,56 @@ var objects = []object{
 	{gvr.OCIMachineTemplate, templates.OCIControlPlaneMachineTemplate},
 }
 
-//CreateOrUpdateAllObjects creates or updates all cluster objects
-func CreateOrUpdateAllObjects(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	for _, o := range objects {
-		if err := createOrUpdateObject(ctx, client, o, v); err != nil {
+// createOrUpdateCAPISecret creates the CAPI secret if it does not already exist
+// if the secret exists, update it in place with the new credentials
+func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, client kubernetes.Interface) error {
+	data := map[string][]byte{
+		"tenancy":              []byte(v.Tenancy),
+		"user":                 []byte(v.User),
+		"fingerprint":          []byte(v.Fingerprint),
+		"region":               []byte(v.Region),
+		"passphrase":           []byte(v.PrivateKeyPassphrase),
+		"key":                  []byte(strings.TrimSpace(strings.ReplaceAll(v.PrivateKey, "\\n", "\n"))),
+		"useInstancePrincipal": []byte("false"),
+	}
+	current, err := client.CoreV1().Secrets(v.CAPIOCINamespace).Get(ctx, v.CAPICredentialName, metav1.GetOptions{})
+	if err != nil {
+		// Create if not exists
+		if apierrors.IsNotFound(err) {
+			_, err := client.CoreV1().Secrets(v.CAPIOCINamespace).Create(ctx, &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: v.CAPICredentialName,
+					Labels: map[string]string{
+						"cluster.x-k8s.io/provider": "infrastructure-oci",
+					},
+				},
+				Data: data,
+			}, metav1.CreateOptions{})
 			return err
+		}
+		return err
+	}
+
+	// update secret in place
+	current.Data = data
+	_, err = client.CoreV1().Secrets(v.CAPIOCINamespace).Update(ctx, current, metav1.UpdateOptions{})
+	return err
+}
+
+// CreateOrUpdateAllObjects creates or updates all cluster objects
+func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernetes.Interface, dynamicInterface dynamic.Interface, v *variables.Variables) error {
+	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
+		return fmt.Errorf("failed to create CAPI credentials: %v", err)
+	}
+	for _, o := range objects {
+		if err := createOrUpdateObject(ctx, dynamicInterface, o, v); err != nil {
+			return fmt.Errorf("failed to create object %s/%s/%s: %v", o.gvr.Group, o.gvr.Version, o.gvr.Resource, err)
 		}
 	}
 	return nil
 }
 
-//CreateOrUpdateNodeGroup creates or updates the worker node group replica count
+// CreateOrUpdateNodeGroup creates or updates the worker node group replica count
 func CreateOrUpdateNodeGroup(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
 	return createOrUpdateObject(ctx, client, object{
 		gvr.MachineDeployment,
@@ -89,7 +132,7 @@ func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o objec
 	return err
 }
 
-//DeleteCluster deletes the cluster
+// DeleteCluster deletes the cluster
 func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
 	deleteFromTmpl := func(o object) error {
 		u, err := loadTextTemplate(o, *v)
@@ -104,7 +147,7 @@ func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.V
 	})
 }
 
-//WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status
+// WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status
 func WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
 	endTime := time.Now().Add(clusterCreationTimeout)
 	for {

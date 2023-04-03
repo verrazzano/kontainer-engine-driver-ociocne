@@ -9,6 +9,11 @@ metadata:
   name:  {{.Name}}
   namespace: {{.Namespace}}
 spec:
+  identityRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OCIClusterIdentity
+    name: {{.Name}}
+    namespace: {{.Namespace}}
   compartmentId:  {{.CompartmentID}}
 {{- if .VCNID }}
   networkSpec:

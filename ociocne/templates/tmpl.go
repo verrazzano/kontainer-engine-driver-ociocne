@@ -11,6 +11,9 @@ var Cluster string
 //go:embed ocicluster.goyaml
 var OCICluster string
 
+//go:embed ociclusteridentity.goyaml
+var ClusterIdentity string
+
 //go:embed ocnecontrolplane.goyaml
 var OCNEControlPlane string
 

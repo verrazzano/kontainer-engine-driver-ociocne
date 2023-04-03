@@ -198,6 +198,14 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "Image for cluster nodes",
 	}
+	driverFlag.Options[driverconst.CloudCredentialId] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The cloud credential id",
+	}
+	driverFlag.Options[driverconst.Region] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The cloud provider region",
+	}
 	driverFlag.Options[driverconst.CompartmentID] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The OCID of the compartment in which to create resrouces (VCN, worker nodes, etc.)",
@@ -581,15 +589,16 @@ func (d *OCIOCNEDriver) generateServiceAccountToken(ctx context.Context, clients
 }
 
 func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
-	client, err := k8s.NewDynamic()
+	dynamicInterface, err := k8s.NewDynamic()
+	kubernetesInterface, err := k8s.NewInterface()
 	if err != nil {
-		return fmt.Errorf("failed to get client: %v", err)
+		return fmt.Errorf("failed to get dynamicInterface: %v", err)
 	}
-	err = capi.CreateOrUpdateAllObjects(ctx, client, state)
+	err = capi.CreateOrUpdateAllObjects(ctx, kubernetesInterface, dynamicInterface, state)
 	if err != nil {
 		return fmt.Errorf("failed to create objects: %v", err)
 	}
-	err = capi.WaitForCAPIClusterReady(ctx, client, state)
+	err = capi.WaitForCAPIClusterReady(ctx, dynamicInterface, state)
 	if err != nil {
 		return fmt.Errorf("failed to create CAPI Cluster: %v", err)
 	}

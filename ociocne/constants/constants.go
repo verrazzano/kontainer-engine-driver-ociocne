@@ -39,4 +39,12 @@ const (
 
 	PreOCNECommands  = "pre-ocne-commands"
 	PostOCNECommands = "post-ocne-commands"
+
+	CloudCredentialId  = "cloud-credential-id"
+	SecretName         = "secret-name"
+	Fingerprint        = "fingerprint"
+	PrivateKeyContents = "private-key-contents"
+	TenancyId          = "tenancy-id"
+	UserId             = "user-id"
+	Region             = "region"
 )
