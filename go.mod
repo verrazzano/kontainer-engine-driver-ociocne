@@ -17,6 +17,9 @@ require (
 )
 
 replace (
+	github.com/Masterminds/goutils => github.com/Masterminds/goutils v1.1.1
+	github.com/emicklei/go-restful/v3 => github.com/emicklei/go-restful/v3 v3.9.0
+	github.com/rancher/wrangler => github.com/rancher/wrangler v0.7.5
 	k8s.io/api => k8s.io/api v0.25.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.25.4
 	k8s.io/client-go => k8s.io/client-go v0.25.4
