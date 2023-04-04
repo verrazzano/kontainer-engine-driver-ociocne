@@ -109,6 +109,20 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultString: variables.DefaultRegistryCNE,
 		},
 	}
+	driverFlag.Options[driverconst.CSIRegistry] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The registry to use for CSI images",
+		Default: &types.Default{
+			DefaultString: variables.DefaultCSIRegistry,
+		},
+	}
+	driverFlag.Options[driverconst.OCICSIImage] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The OCI CSI Provider Image",
+		Default: &types.Default{
+			DefaultString: variables.DefaultOCICSIImage,
+		},
+	}
 	driverFlag.Options[driverconst.CalicoRegistry] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The registry to use for calico cni images",
@@ -128,6 +142,27 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Usage: "The image for OCI cloud-controller-manager",
 		Default: &types.Default{
 			DefaultString: variables.DefaultCCMImage,
+		},
+	}
+	driverFlag.Options[driverconst.InstallCalico] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Install Calico addon",
+		Default: &types.Default{
+			DefaultBool: true,
+		},
+	}
+	driverFlag.Options[driverconst.InstallCCM] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Install CCM addon",
+		Default: &types.Default{
+			DefaultBool: true,
+		},
+	}
+	driverFlag.Options[driverconst.InstallCSI] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Install CSI addon",
+		Default: &types.Default{
+			DefaultBool: true,
 		},
 	}
 	driverFlag.Options[driverconst.ETCDImageTag] = &types.Flag{

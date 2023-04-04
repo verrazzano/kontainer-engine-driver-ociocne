@@ -30,28 +30,6 @@ const (
 	clusterCreationPollingInterval = 30 * time.Second
 )
 
-type object struct {
-	gvr  schema.GroupVersionResource
-	text string
-}
-
-var objects = []object{
-	{gvr.ConfigMap, templates.CCMConfigMap},
-	{gvr.ConfigMap, templates.CSIConfigMap},
-	{gvr.ConfigMap, templates.CalicoConfigMap},
-	{gvr.ClusterResourceSet, templates.CalicoResourceSet},
-	{gvr.ClusterResourceSet, templates.CCMResourceSet},
-	{gvr.ClusterResourceSet, templates.CSIResourceSet},
-	{gvr.Cluster, templates.Cluster},
-	{gvr.ClusterIdentity, templates.ClusterIdentity},
-	{gvr.OCICluster, templates.OCICluster},
-	{gvr.KubeadmConfigTemplate, templates.OCNEConfigTemplate},
-	{gvr.KubeadmControlPlane, templates.OCNEControlPlane},
-	{gvr.MachineDeployment, templates.MachineDeployment},
-	{gvr.OCIMachineTemplate, templates.OCIMachineTemplate},
-	{gvr.OCIMachineTemplate, templates.OCIControlPlaneMachineTemplate},
-}
-
 // createOrUpdateCAPISecret creates the CAPI secret if it does not already exist
 // if the secret exists, update it in place with the new credentials
 func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, client kubernetes.Interface) error {
@@ -93,7 +71,7 @@ func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernete
 	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
 		return fmt.Errorf("failed to create CAPI credentials: %v", err)
 	}
-	for _, o := range objects {
+	for _, o := range createObjects(v) {
 		if err := createOrUpdateObject(ctx, dynamicInterface, o, v); err != nil {
 			return fmt.Errorf("failed to create object %s/%s/%s: %v", o.gvr.Group, o.gvr.Version, o.gvr.Resource, err)
 		}

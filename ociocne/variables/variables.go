@@ -33,6 +33,8 @@ const (
 	DefaultCoreDNSImageTag = "1.8.6"
 	DefaultCalicoTag       = "v3.25.0"
 	DefaultCCMImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
+	DefaultOCICSIImage     = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
+	DefaultCSIRegistry     = "k8s.gcr.io/sig-storage"
 )
 
 const (
@@ -90,7 +92,12 @@ type (
 		CoreDNSImageTag         string
 		CCMImage                string
 		CSIRegistry             string
+		OCICSIImage             string
 		ProviderId              string
+
+		InstallCalico bool
+		InstallCCM    bool
+		InstallCSI    bool
 
 		CAPIOCINamespace   string
 		CAPICredentialName string
@@ -117,7 +124,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 		// User and authentication
 		SSHPublicKey:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodePublicKeyContents, "nodePublicKeyContents").(string),
-		CloudCredentialId: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.SecretName, "cloudCredentialId").(string),
+		CloudCredentialId: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CloudCredentialId, "cloudCredentialId").(string),
 		Region:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.Region, "region").(string),
 		CompartmentID:     options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CompartmentID, "compartmentId").(string),
 
@@ -145,11 +152,16 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 		// Image settings
 		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
+		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
+		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
 		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
 		CalicoTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoTag, "calicoImageTag").(string),
 		CCMImage:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
-		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
-		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
+		OCICSIImage:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.OCICSIImage, "ociCsiImage").(string),
+		CSIRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CSIRegistry, "csiRegistry").(string),
+		InstallCalico:        options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installCalico").(bool),
+		InstallCCM:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCCM, "installCcm").(bool),
+		InstallCSI:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCSI, "installCsi").(bool),
 
 		// Other
 		ProxyEndpoint:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),

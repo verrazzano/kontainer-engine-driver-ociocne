@@ -36,17 +36,18 @@ const (
 	CalicoRegistry       = "calico-image-registry"
 	CalicoTag            = "calico-image-tag"
 	CCMImage             = "ccm-image"
+	OCICSIImage          = "oci-csi-image"
+	CSIRegistry          = "csi-registry"
+	InstallCalico        = "install-calico"
+	InstallCCM           = "install-ccm"
+	InstallCSI           = "install-csi"
 
 	ProxyEndpoint = "proxy-endpoint"
 
 	PreOCNECommands  = "pre-ocne-commands"
 	PostOCNECommands = "post-ocne-commands"
 
-	CloudCredentialId  = "cloud-credential-id"
-	SecretName         = "secret-name"
-	Fingerprint        = "fingerprint"
-	PrivateKeyContents = "private-key-contents"
-	TenancyId          = "tenancy-id"
-	UserId             = "user-id"
-	Region             = "region"
+	CloudCredentialId = "cloud-credential-id"
+	SecretName        = "secret-name"
+	Region            = "region"
 )
