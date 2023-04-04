@@ -43,7 +43,7 @@ func TestRenderObjects(t *testing.T) {
 		ProviderId:              variables.ProviderId,
 	}
 
-	for _, o := range objects {
+	for _, o := range createObjects(&v) {
 		u, err := loadTextTemplate(o, v)
 		assert.NoError(t, err)
 		assert.NotNil(t, u)
