@@ -7,19 +7,22 @@ go 1.19
 
 require (
 	github.com/oracle/oci-go-sdk/v65 v65.32.0
-	github.com/rancher/kontainer-engine v0.0.0-20190711161432-b98bad2201bb
+	github.com/rancher/kontainer-engine v0.0.4-dev.0.20210625182816-1a4f4e73a324
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.21.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.0
-	k8s.io/client-go v0.26.0
+	k8s.io/client-go v12.0.0+incompatible
 )
 
 replace (
-	k8s.io/api v0.26.0 => k8s.io/api v0.25.4
-	k8s.io/apimachinery v0.26.0 => k8s.io/apimachinery v0.25.4
-	k8s.io/client-go v0.26.0 => k8s.io/client-go v0.25.4
+	github.com/Masterminds/goutils => github.com/Masterminds/goutils v1.1.1
+	github.com/emicklei/go-restful/v3 => github.com/emicklei/go-restful/v3 v3.9.0
+	github.com/rancher/wrangler => github.com/rancher/wrangler v0.7.5
+	k8s.io/api => k8s.io/api v0.25.4
+	k8s.io/apimachinery => k8s.io/apimachinery v0.25.4
+	k8s.io/client-go => k8s.io/client-go v0.25.4
 )
 
 require (
@@ -45,7 +48,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.6.0 // indirect
 	github.com/onsi/gomega v1.24.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rancher/rke v0.2.8 // indirect
+	github.com/rancher/rke v1.1.5-rc3 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
