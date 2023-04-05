@@ -52,7 +52,7 @@ func (d *OCIOCNEDriver) Remove(ctx context.Context, info *types.ClusterInfo) err
 	if err != nil {
 		return err
 	}
-	client, err := k8s.NewDynamic()
+	client, err := k8s.InjectedDynamic()
 	if err != nil {
 		return err
 	}
@@ -161,6 +161,27 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 	driverFlag.Options[driverconst.InstallCSI] = &types.Flag{
 		Type:  types.BoolType,
 		Usage: "Install CSI addon",
+		Default: &types.Default{
+			DefaultBool: true,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoImage] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano Platform Operator Image",
+		Default: &types.Default{
+			DefaultString: variables.DefaultVerrazzanoImage,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano resource to install on the managed cluster",
+		Default: &types.Default{
+			DefaultString: variables.DefaultVerrazzanoResource,
+		},
+	}
+	driverFlag.Options[driverconst.InstallVerrazzano] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Install Verrazzano addon",
 		Default: &types.Default{
 			DefaultBool: true,
 		},
@@ -406,24 +427,31 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		// https://github.com/rancher/rancher/issues/24135
 	}
 
-	d.Logger.Infof("+++ yaml marshall in PostCheck +++")
 	kubeConfigBytes, err := yaml.Marshal(&capiClusterKubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling internalConfig: %v", err)
 	}
 
-	clientSet, err := k8s.NewInterfaceForKubeconfig(string(kubeConfigBytes))
-	d.Logger.Infof("+++ getClientsetFromKubeconfig in PostCheck +++")
+	ki, err := k8s.NewInterfaceForKubeconfig(kubeConfigBytes)
 	if err != nil {
-		return nil, fmt.Errorf("error creating clientset from internalConfig: %v", err)
+		return nil, fmt.Errorf("failed to create clientset for managed cluster %s: %v", state.Name, err)
 	}
 
-	d.Logger.Infof("+++ generateServiceAccountToken in PostCheck +++")
-	info.ServiceAccountToken, err = d.generateServiceAccountToken(ctx, clientSet)
+	d.Logger.Infof("Creating service account token for cluster %v", state.Name)
+	info.ServiceAccountToken, err = d.generateServiceAccountToken(ctx, ki)
 	if err != nil {
 		return nil, fmt.Errorf("could not generate service account token: %v", err)
 	}
 
+	di, err := k8s.NewDynamicForKubeconfig(kubeConfigBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
+	}
+
+	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
+	if err := capi.InstallVerrazzano(ctx, ki, di, state); err != nil {
+		return nil, fmt.Errorf("failed to install Verrazzano on managed cluster %s: %v", state.Name, err)
+	}
 	d.Logger.Infof("+++ returning from PostCheck +++")
 	return info, nil
 }
@@ -456,7 +484,7 @@ func (d *OCIOCNEDriver) SetClusterSize(ctx context.Context, info *types.ClusterI
 		d.Logger.Errorf("Failed to save new node group size: %v", err)
 		return err
 	}
-	client, err := k8s.NewDynamic()
+	client, err := k8s.InjectedDynamic()
 	if err != nil {
 		return fmt.Errorf("failed to get client: %v", err)
 	}
@@ -638,8 +666,8 @@ func (d *OCIOCNEDriver) generateServiceAccountToken(ctx context.Context, clients
 }
 
 func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
-	dynamicInterface, err := k8s.NewDynamic()
-	kubernetesInterface, err := k8s.NewInterface()
+	dynamicInterface, err := k8s.InjectedDynamic()
+	kubernetesInterface, err := k8s.InjectedInterface()
 	if err != nil {
 		return fmt.Errorf("failed to get dynamicInterface: %v", err)
 	}

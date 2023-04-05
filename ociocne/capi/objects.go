@@ -12,6 +12,8 @@ import (
 
 func createObjects(v *variables.Variables) []object {
 	var res []object
+
+	// Create addons if they are enabled
 	if v.InstallCalico {
 		res = append(res, cni...)
 	}
@@ -21,6 +23,9 @@ func createObjects(v *variables.Variables) []object {
 	if v.InstallCSI {
 		res = append(res, csi...)
 	}
+	if v.InstallVerrazzano {
+		res = append(res, vpo...)
+	}
 	res = append(res, capi...)
 	return res
 }
@@ -28,6 +33,11 @@ func createObjects(v *variables.Variables) []object {
 type object struct {
 	gvr  schema.GroupVersionResource
 	text string
+}
+
+var vpo = []object{
+	{gvr.ConfigMap, templates.VPOConfigMap},
+	{gvr.ClusterResourceSet, templates.VPOResourceSet},
 }
 
 var csi = []object{

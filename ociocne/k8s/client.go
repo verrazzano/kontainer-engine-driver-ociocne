@@ -35,28 +35,28 @@ func MustSetKubeconfigFromEnv() {
 var InjectedKubeConfig []byte
 
 // NewInterfaceForKubeconfig creates a kubernetes.Interface given a kubeconfig string
-func NewInterfaceForKubeconfig(kubeconfig string) (kubernetes.Interface, error) {
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+func NewInterfaceForKubeconfig(kubeconfig []byte) (kubernetes.Interface, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 	return kubernetes.NewForConfig(config)
 }
 
-// NewInterface creates a new kubernetes.Interface using the injected kubeconfig
-func NewInterface() (kubernetes.Interface, error) {
-	config, err := clientcmd.RESTConfigFromKubeConfig(InjectedKubeConfig)
-	if err != nil {
-		return nil, err
-	}
-	return kubernetes.NewForConfig(config)
-}
-
-// NewDynamic creates a new dynamic.Interface using the injected kubeconfig
-func NewDynamic() (dynamic.Interface, error) {
-	config, err := clientcmd.RESTConfigFromKubeConfig(InjectedKubeConfig)
+func NewDynamicForKubeconfig(kubeconfig []byte) (dynamic.Interface, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 	return dynamic.NewForConfig(config)
+}
+
+// InjectedInterface creates a new kubernetes.Interface using the injected kubeconfig
+func InjectedInterface() (kubernetes.Interface, error) {
+	return NewInterfaceForKubeconfig(InjectedKubeConfig)
+}
+
+// InjectedDynamic creates a new dynamic.Interface using the injected kubeconfig
+func InjectedDynamic() (dynamic.Interface, error) {
+	return NewDynamicForKubeconfig(InjectedKubeConfig)
 }

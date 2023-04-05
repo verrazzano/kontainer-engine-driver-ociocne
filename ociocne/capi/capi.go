@@ -125,7 +125,7 @@ func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.V
 	})
 }
 
-// WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status
+// WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status, and its Machines
 func WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
 	endTime := time.Now().Add(clusterCreationTimeout)
 	for {
@@ -135,7 +135,13 @@ func WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, stat
 			return err
 		}
 		if isClusterReady(cluster) {
-			return nil
+			machinesReady, err := areMachinesReady(ctx, client, state)
+			if err != nil {
+				return err
+			}
+			if machinesReady {
+				return nil
+			}
 		}
 		if time.Now().After(endTime) {
 			return fmt.Errorf("timed out waiting for cluster %s to create", state.Name)
@@ -175,6 +181,42 @@ func isClusterReady(cluster *unstructured.Unstructured) bool {
 		return false
 	}
 	return true
+}
+
+func areMachinesReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) (bool, error) {
+	machineList, err := client.Resource(gvr.Machine).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"cluster.x-k8s.io/cluster-name": state.Name,
+			},
+		}),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if machineList == nil || len(machineList.Items) < 1 {
+		return false, nil
+	}
+
+	for _, machine := range machineList.Items {
+		status, ok := machine.Object["status"]
+		if !ok {
+			return false, nil
+		}
+		phase, ok := status.(map[string]interface{})["phase"]
+		if !ok {
+			return false, nil
+		}
+		phaseString, ok := phase.(string)
+		if !ok {
+			return false, nil
+		}
+		if phaseString != "Running" {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func loadTextTemplate(o object, variables variables.Variables) (*unstructured.Unstructured, error) {
