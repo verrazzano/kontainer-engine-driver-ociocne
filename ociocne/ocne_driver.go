@@ -74,14 +74,14 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The Kubernetes Pod CIDR block",
 		Default: &types.Default{
-			DefaultString: "192.168.0.0/16",
+			DefaultString: "10.244.0.0/16",
 		},
 	}
 	driverFlag.Options[driverconst.ClusterCIDR] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The Kubernetes Clister CIDR block",
 		Default: &types.Default{
-			DefaultString: "10.0.0.0/12",
+			DefaultString: "10.96.0.0/16",
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneShape] = &types.Flag{
