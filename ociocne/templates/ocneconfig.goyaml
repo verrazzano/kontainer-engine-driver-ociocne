@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-kind: OcneConfigTemplate
+kind: OCNEConfigTemplate
 metadata:
   name:  {{.Name}}-md-0
   namespace: {{.Namespace}}
@@ -10,7 +10,9 @@ spec:
   template:
     spec:
 {{- if .ProxyEndpoint }}
-      proxy: {{.ProxyEndpoint}}
+      proxy:
+       httpProxy: {{.ProxyEndpoint}}
+       httpsProxy: {{.ProxyEndpoint}}
 {{- end }}
       joinConfiguration:
         nodeRegistration:
@@ -18,13 +20,13 @@ spec:
             cloud-provider: external
             provider-id: {{.ProviderId}}
       {{- if .PreOCNECommands }}
-      preOcneCommands:
+      preOCNECommands:
       {{- range .PreOCNECommands }}
         - {{.}}
       {{- end }}
       {{- end }}
       {{- if .PostOCNECommands }}
-      postOcneCommands:
+      postOCNECommands:
       {{- range .PostOCNECommands }}
         - {{.}}
       {{- end }}
