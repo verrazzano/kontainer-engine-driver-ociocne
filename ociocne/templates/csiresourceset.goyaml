@@ -13,4 +13,4 @@ spec:
   resources:
     - kind: ConfigMap
       name: {{.Name}}-oci-csi
-  strategy: ApplyOnce
+  strategy: Reconcile

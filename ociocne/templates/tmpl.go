@@ -46,3 +46,9 @@ var CSIConfigMap string
 
 //go:embed calicoconfigmap.goyaml
 var CalicoConfigMap string
+
+//go:embed vporesourceset.goyaml
+var VPOResourceSet string
+
+//go:embed vpoconfigmap.goyaml
+var VPOConfigMap string

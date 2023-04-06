@@ -38,6 +38,12 @@ var ClusterIdentity = schema.GroupVersionResource{
 	Resource: "ociclusteridentities",
 }
 
+var Machine = schema.GroupVersionResource{
+	Group:    ClusterXK8sIO,
+	Version:  V1Beta1Version,
+	Resource: "machines",
+}
+
 var KubeadmControlPlane = schema.GroupVersionResource{
 	Group:    ControlPlaneXK8sIO,
 	Version:  V1Beta1Version,
@@ -66,4 +72,10 @@ var ConfigMap = schema.GroupVersionResource{
 	Group:    "",
 	Version:  "v1",
 	Resource: "configmaps",
+}
+
+var Verrazzano = schema.GroupVersionResource{
+	Group:    "install.verrazzano.io",
+	Version:  "v1beta1",
+	Resource: "verrazzanos",
 }

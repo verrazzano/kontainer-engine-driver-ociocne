@@ -28,13 +28,21 @@ const (
 	DefaultVMShape                 = "VM.Standard.E4.Flex"
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
-	DefaultRegistryCNE     = "container-registry.oracle.com/olcne"
-	DefaultETCDImageTag    = "3.5.3"
-	DefaultCoreDNSImageTag = "1.8.6"
-	DefaultCalicoTag       = "v3.25.0"
-	DefaultCCMImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
-	DefaultOCICSIImage     = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
-	DefaultCSIRegistry     = "k8s.gcr.io/sig-storage"
+	DefaultRegistryCNE        = "container-registry.oracle.com/olcne"
+	DefaultETCDImageTag       = "3.5.3"
+	DefaultCoreDNSImageTag    = "1.8.6"
+	DefaultCalicoTag          = "v3.25.0"
+	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
+	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
+	DefaultCSIRegistry        = "k8s.gcr.io/sig-storage"
+	DefaultVerrazzanoImage    = "ghcr.io/verrazzano/verrazzano-platform-operator:v1.5.2-20230315235330-0326ee67"
+	DefaultVerrazzanoResource = `apiVersion: install.verrazzano.io/v1beta1
+kind: Verrazzano
+metadata:
+  name: managed
+  namespace: default
+spec:
+  profile: managed-cluster`
 )
 
 const (
@@ -94,6 +102,10 @@ type (
 		CSIRegistry             string
 		OCICSIImage             string
 		ProviderId              string
+
+		InstallVerrazzano  bool
+		VerrazzanoResource string
+		VerrazzanoImage    string
 
 		InstallCalico bool
 		InstallCCM    bool
@@ -163,6 +175,11 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		InstallCCM:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCCM, "installCcm").(bool),
 		InstallCSI:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCSI, "installCsi").(bool),
 
+		// Verrazzano settings
+		VerrazzanoImage:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoImage, "verrazzanoImage").(string),
+		VerrazzanoResource: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoResource, "verrazzanoResource").(string),
+		InstallVerrazzano:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installVerrazzano").(bool),
+
 		// Other
 		ProxyEndpoint:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),
 		PreOCNECommands:  options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PreOCNECommands, "preOcneCommands").(*types.StringSlice).Value,
@@ -186,7 +203,7 @@ func (v *Variables) SetUpdateOptions(driverOptions *types.DriverOptions) {
 
 // SetDynamicValues sets dynamic values from OCI in the Variables
 func (v *Variables) SetDynamicValues(ctx context.Context) error {
-	client, err := k8s.NewInterface()
+	client, err := k8s.InjectedInterface()
 	if err != nil {
 		return err
 	}
@@ -215,7 +232,7 @@ func (v *Variables) GetConfigurationProvider() common.ConfigurationProvider {
 
 // GetCAPIClusterKubeConfig fetches the cluster's kubeconfig
 func (v *Variables) GetCAPIClusterKubeConfig(ctx context.Context, state *Variables) (*store.KubeConfig, error) {
-	client, err := k8s.NewInterface()
+	client, err := k8s.InjectedInterface()
 	if err != nil {
 		return nil, err
 	}

@@ -42,12 +42,15 @@ const (
 	InstallCCM           = "install-ccm"
 	InstallCSI           = "install-csi"
 
+	InstallVerrazzano  = "install-verrazzano"
+	VerrazzanoResource = "verrazzano-resource"
+	VerrazzanoImage    = "verrazzano-image"
+
 	ProxyEndpoint = "proxy-endpoint"
 
 	PreOCNECommands  = "pre-ocne-commands"
 	PostOCNECommands = "post-ocne-commands"
 
 	CloudCredentialId = "cloud-credential-id"
-	SecretName        = "secret-name"
 	Region            = "region"
 )
