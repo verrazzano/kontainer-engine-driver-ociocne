@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
 	"k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,17 +24,28 @@ const (
 	verrazzanoPlatformOperator = "verrazzano-platform-operator"
 )
 
-func InstallVerrazzano(ctx context.Context, ki kubernetes.Interface, di dynamic.Interface, v *variables.Variables) error {
+func InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, di, adminDi dynamic.Interface, v *variables.Variables) error {
 	if !v.InstallVerrazzano || v.VerrazzanoResource == "" {
 		return nil
 	}
 	if err := waitForVerrazzanoPlatformOperator(ctx, ki); err != nil {
 		return err
 	}
-	return createOrUpdateObject(ctx, di, object{
+
+	// Create the Verrazzano Resource
+	if err := createOrUpdateObject(ctx, di, object{
 		gvr:  gvr.Verrazzano,
 		text: v.VerrazzanoResource,
+	}, v); err != nil {
+		return err
+	}
+
+	// Create the Verrazzano Managed Cluster Resource
+	return createOrUpdateObject(ctx, di, object{
+		gvr:  gvr.VerrazzanoManagedCluster,
+		text: templates.VMC,
 	}, v)
+
 }
 
 func waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {

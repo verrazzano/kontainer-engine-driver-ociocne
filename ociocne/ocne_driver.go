@@ -68,7 +68,11 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 	}
 	driverFlag.Options[driverconst.ClusterName] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The name of the OCNE Cluster",
+		Usage: "The generated name of the OCNE Cluster",
+	}
+	driverFlag.Options[driverconst.DisplayName] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The display name of the OCNE Cluster",
 	}
 	driverFlag.Options[driverconst.PodCIDR] = &types.Flag{
 		Type:  types.StringType,
@@ -447,9 +451,13 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
 	}
+	adminDi, err := k8s.InjectedDynamic()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic clientset for admin cluster %s: %v", state.Name, err)
+	}
 
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
-	if err := capi.InstallVerrazzano(ctx, ki, di, state); err != nil {
+	if err := capi.InstallAndRegisterVerrazzano(ctx, ki, di, adminDi, state); err != nil {
 		return nil, fmt.Errorf("failed to install Verrazzano on managed cluster %s: %v", state.Name, err)
 	}
 	d.Logger.Infof("+++ returning from PostCheck +++")

@@ -52,3 +52,6 @@ var VPOResourceSet string
 
 //go:embed vpoconfigmap.goyaml
 var VPOConfigMap string
+
+//go:embed vmc.goyaml
+var VMC string

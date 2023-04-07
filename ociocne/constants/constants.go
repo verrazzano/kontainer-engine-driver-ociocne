@@ -5,6 +5,7 @@ package constants
 
 const (
 	ClusterName           = "name"
+	DisplayName           = "display-name"
 	KubernetesVersion     = "kubernetes-version"
 	NodePublicKeyContents = "node-public-key-contents"
 
