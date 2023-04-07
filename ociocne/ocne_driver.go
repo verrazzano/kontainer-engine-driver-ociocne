@@ -458,7 +458,7 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
 	if err := capi.InstallAndRegisterVerrazzano(ctx, ki, di, adminDi, state); err != nil {
-		return nil, fmt.Errorf("failed to install Verrazzano on managed cluster %s: %v", state.Name, err)
+		return nil, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
 	}
 	d.Logger.Infof("+++ returning from PostCheck +++")
 	return info, nil

@@ -6,6 +6,7 @@ package capi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
@@ -32,20 +33,22 @@ func InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, 
 		return err
 	}
 
-	// Create the Verrazzano Resource
-	if err := createOrUpdateObject(ctx, di, object{
-		gvr:  gvr.Verrazzano,
-		text: v.VerrazzanoResource,
-	}, v); err != nil {
-		return err
+	// Create the Verrazzano Resource if not exists
+	if err := cruObject(ctx, di, Object{
+		GVR:  gvr.Verrazzano,
+		Text: v.VerrazzanoResource,
+	}, v, false); err != nil {
+		return fmt.Errorf("install error: %v", err)
 	}
 
-	// Create the Verrazzano Managed Cluster Resource
-	return createOrUpdateObject(ctx, di, object{
-		gvr:  gvr.VerrazzanoManagedCluster,
-		text: templates.VMC,
-	}, v)
-
+	// Create the Verrazzano Managed Cluster Resource if not exists
+	if err := cruObject(ctx, adminDi, Object{
+		GVR:  gvr.VerrazzanoManagedCluster,
+		Text: templates.VMC,
+	}, v, false); err != nil {
+		return fmt.Errorf("registration error: %v", err)
+	}
+	return nil
 }
 
 func waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
