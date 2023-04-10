@@ -44,7 +44,7 @@ var Machine = schema.GroupVersionResource{
 	Resource: "machines",
 }
 
-var KubeadmControlPlane = schema.GroupVersionResource{
+var OCNEControlPlane = schema.GroupVersionResource{
 	Group:    ControlPlaneXK8sIO,
 	Version:  V1Beta1Version,
 	Resource: "ocnecontrolplanes",
@@ -56,7 +56,7 @@ var OCIMachineTemplate = schema.GroupVersionResource{
 	Resource: "ocimachinetemplates",
 }
 
-var KubeadmConfigTemplate = schema.GroupVersionResource{
+var OCNEConfigTemplate = schema.GroupVersionResource{
 	Group:    "bootstrap.cluster.x-k8s.io",
 	Version:  "v1beta1",
 	Resource: "ocneconfigtemplates",

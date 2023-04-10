@@ -31,37 +31,38 @@ func createObjects(v *variables.Variables) []Object {
 }
 
 type Object struct {
-	GVR  schema.GroupVersionResource
-	Text string
+	GVR          schema.GroupVersionResource
+	Text         string
+	LockedFields map[string]bool
 }
 
 var vpo = []Object{
-	{gvr.ConfigMap, templates.VPOConfigMap},
-	{gvr.ClusterResourceSet, templates.VPOResourceSet},
+	{GVR: gvr.ConfigMap, Text: templates.VPOConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.VPOResourceSet},
 }
 
 var csi = []Object{
-	{gvr.ConfigMap, templates.CSIConfigMap},
-	{gvr.ClusterResourceSet, templates.CSIResourceSet},
+	{GVR: gvr.ConfigMap, Text: templates.CSIConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.CSIResourceSet},
 }
 
 var ccm = []Object{
-	{gvr.ConfigMap, templates.CCMConfigMap},
-	{gvr.ClusterResourceSet, templates.CCMResourceSet},
+	{GVR: gvr.ConfigMap, Text: templates.CCMConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.CCMResourceSet},
 }
 
 var cni = []Object{
-	{gvr.ConfigMap, templates.CalicoConfigMap},
-	{gvr.ClusterResourceSet, templates.CalicoResourceSet},
+	{GVR: gvr.ConfigMap, Text: templates.CalicoConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoResourceSet},
 }
 
 var capi = []Object{
-	{gvr.Cluster, templates.Cluster},
-	{gvr.ClusterIdentity, templates.ClusterIdentity},
-	{gvr.OCICluster, templates.OCICluster},
-	{gvr.KubeadmConfigTemplate, templates.OCNEConfigTemplate},
-	{gvr.KubeadmControlPlane, templates.OCNEControlPlane},
-	{gvr.MachineDeployment, templates.MachineDeployment},
-	{gvr.OCIMachineTemplate, templates.OCIMachineTemplate},
-	{gvr.OCIMachineTemplate, templates.OCIControlPlaneMachineTemplate},
+	{GVR: gvr.Cluster, Text: templates.Cluster},
+	{GVR: gvr.ClusterIdentity, Text: templates.ClusterIdentity},
+	{GVR: gvr.OCICluster, Text: templates.OCICluster},
+	{GVR: gvr.OCNEConfigTemplate, Text: templates.OCNEConfigTemplate},
+	{GVR: gvr.OCNEControlPlane, Text: templates.OCNEControlPlane},
+	{GVR: gvr.MachineDeployment, Text: templates.MachineDeployment},
+	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIMachineTemplate},
+	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIControlPlaneMachineTemplate},
 }

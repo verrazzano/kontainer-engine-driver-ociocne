@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"net"
+	"regexp"
 	"strings"
 )
 
@@ -83,6 +84,7 @@ type (
 		NodeShape               string
 		ControlPlaneShape       string
 		KubernetesVersion       string
+		SanitizedK8sVersion     string
 		NodeOCPUs               int64
 		ControlPlaneOCPUs       int64
 		NodeMemoryGbs           int64
@@ -190,6 +192,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		CAPIOCINamespace: CAPIOCINamespace,
 	}
 	v.Namespace = v.Name
+	v.SanitizedK8sVersion = sanitizeK8sVersion(v.KubernetesVersion)
 
 	if err := v.SetDynamicValues(ctx); err != nil {
 		return v, err
@@ -197,10 +200,9 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	return v, nil
 }
 
-// SetUpdateOptions sets update options in the Variables
-func (v *Variables) SetUpdateOptions(driverOptions *types.DriverOptions) {
-	v.ControlPlaneReplicas = options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumControlPlaneNodes, "numControlPlaneNodes").(int64)
-	v.NodeReplicas = options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumWorkerNodes, "numWorkerNodes").(int64)
+func (v *Variables) SetKubernetesVersion(version string) {
+	v.KubernetesVersion = version
+	v.SanitizedK8sVersion = sanitizeK8sVersion(version)
 }
 
 // SetDynamicValues sets dynamic values from OCI in the Variables
@@ -367,4 +369,10 @@ func (v *Variables) cloudCredentialNameAndNamespace() (string, string) {
 		return "cattle-global-data", split[0]
 	}
 	return split[1], split[0]
+}
+
+var allNonAlphaNumeric = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+
+func sanitizeK8sVersion(version string) string {
+	return allNonAlphaNumeric.ReplaceAllString(version, "-")
 }

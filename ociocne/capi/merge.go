@@ -5,18 +5,22 @@ package capi
 
 import "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-func mergeUnstructured(base *unstructured.Unstructured, merge *unstructured.Unstructured) *unstructured.Unstructured {
-	merged := mergeMaps(base.Object, merge.Object)
+func mergeUnstructured(base *unstructured.Unstructured, merge *unstructured.Unstructured, lockedFields map[string]bool) *unstructured.Unstructured {
+	merged := mergeMaps(base.Object, merge.Object, lockedFields)
 	return &unstructured.Unstructured{
 		Object: merged,
 	}
 }
 
-func mergeMaps(m1, m2 map[string]interface{}) map[string]interface{} {
+func mergeMaps(m1, m2 map[string]interface{}, lockedFields map[string]bool) map[string]interface{} {
 	for k, v2 := range m2 {
+		// don't update locked fields
+		if lockedFields[k] {
+			continue
+		}
 		if vm1, vm2, ok := isRecursiveMerge(k, m1, v2); ok {
 			// recursively merge maps if both values are maps
-			m1[k] = mergeMaps(vm1, vm2)
+			m1[k] = mergeMaps(vm1, vm2, lockedFields)
 		} else {
 			// otherwise replace key
 			m1[k] = v2
