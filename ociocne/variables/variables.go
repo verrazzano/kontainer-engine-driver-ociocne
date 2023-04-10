@@ -66,8 +66,9 @@ type Subnet struct {
 type (
 	//Variables are parameters for cluster lifecycle operations
 	Variables struct {
-		Name      string
-		Namespace string
+		Name        string
+		DisplayName string
+		Namespace   string
 
 		ImageID                 string
 		ImageDisplayName        string
@@ -132,6 +133,7 @@ type (
 func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*Variables, error) {
 	v := &Variables{
 		Name:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
+		DisplayName:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.DisplayName, "displayName").(string),
 		KubernetesVersion: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.KubernetesVersion, "kubernetesVersion").(string),
 
 		// User and authentication

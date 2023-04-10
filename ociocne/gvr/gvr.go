@@ -79,3 +79,9 @@ var Verrazzano = schema.GroupVersionResource{
 	Version:  "v1beta1",
 	Resource: "verrazzanos",
 }
+
+var VerrazzanoManagedCluster = schema.GroupVersionResource{
+	Group:    "clusters.verrazzano.io",
+	Version:  "v1alpha1",
+	Resource: "verrazzanomanagedclusters",
+}

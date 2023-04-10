@@ -10,8 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func createObjects(v *variables.Variables) []object {
-	var res []object
+func createObjects(v *variables.Variables) []Object {
+	var res []Object
 
 	// Create addons if they are enabled
 	if v.InstallCalico {
@@ -30,32 +30,32 @@ func createObjects(v *variables.Variables) []object {
 	return res
 }
 
-type object struct {
-	gvr  schema.GroupVersionResource
-	text string
+type Object struct {
+	GVR  schema.GroupVersionResource
+	Text string
 }
 
-var vpo = []object{
+var vpo = []Object{
 	{gvr.ConfigMap, templates.VPOConfigMap},
 	{gvr.ClusterResourceSet, templates.VPOResourceSet},
 }
 
-var csi = []object{
+var csi = []Object{
 	{gvr.ConfigMap, templates.CSIConfigMap},
 	{gvr.ClusterResourceSet, templates.CSIResourceSet},
 }
 
-var ccm = []object{
+var ccm = []Object{
 	{gvr.ConfigMap, templates.CCMConfigMap},
 	{gvr.ClusterResourceSet, templates.CCMResourceSet},
 }
 
-var cni = []object{
+var cni = []Object{
 	{gvr.ConfigMap, templates.CalicoConfigMap},
 	{gvr.ClusterResourceSet, templates.CalicoResourceSet},
 }
 
-var capi = []object{
+var capi = []Object{
 	{gvr.Cluster, templates.Cluster},
 	{gvr.ClusterIdentity, templates.ClusterIdentity},
 	{gvr.OCICluster, templates.OCICluster},

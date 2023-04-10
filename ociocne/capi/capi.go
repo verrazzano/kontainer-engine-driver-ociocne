@@ -73,7 +73,7 @@ func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernete
 	}
 	for _, o := range createObjects(v) {
 		if err := createOrUpdateObject(ctx, dynamicInterface, o, v); err != nil {
-			return fmt.Errorf("failed to create object %s/%s/%s: %v", o.gvr.Group, o.gvr.Version, o.gvr.Resource, err)
+			return fmt.Errorf("failed to create Object %s/%s/%s: %v", o.GVR.Group, o.GVR.Version, o.GVR.Resource, err)
 		}
 	}
 	return nil
@@ -81,47 +81,54 @@ func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernete
 
 // CreateOrUpdateNodeGroup creates or updates the worker node group replica count
 func CreateOrUpdateNodeGroup(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	return createOrUpdateObject(ctx, client, object{
+	return createOrUpdateObject(ctx, client, Object{
 		gvr.MachineDeployment,
 		templates.MachineDeployment,
 	}, v)
 }
 
-func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o object, v *variables.Variables) error {
+func cruObject(ctx context.Context, client dynamic.Interface, o Object, v *variables.Variables, update bool) error {
 	toCreateObject, err := loadTextTemplate(o, *v)
 	if err != nil {
 		return err
 	}
 
-	// Check if the object already exists. Create it if it does not exist and return
-	existingObject, err := client.Resource(o.gvr).Namespace(toCreateObject.GetNamespace()).Get(ctx, toCreateObject.GetName(), metav1.GetOptions{})
+	// Check if the Object already exists. Create it if it does not exist and return
+	existingObject, err := client.Resource(o.GVR).Namespace(toCreateObject.GetNamespace()).Get(ctx, toCreateObject.GetName(), metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return createIfNotExists(ctx, client, o.gvr, toCreateObject)
+			return createIfNotExists(ctx, client, o.GVR, toCreateObject)
 		}
 	}
 
-	// If the object exists, merge toCreateObject with existingObject, and do an update
-	mergedObject := mergeUnstructured(existingObject, toCreateObject)
-	if err != nil {
+	if update {
+		// If the Object exists, merge toCreateObject with existingObject, and do an update
+		mergedObject := mergeUnstructured(existingObject, toCreateObject)
+		if err != nil {
+			return err
+		}
+		_, err = client.Resource(o.GVR).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
 		return err
 	}
-	_, err = client.Resource(o.gvr).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
-	return err
+	return nil
+}
+
+func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o Object, v *variables.Variables) error {
+	return cruObject(ctx, client, o, v, true)
 }
 
 // DeleteCluster deletes the cluster
 func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	deleteFromTmpl := func(o object) error {
+	deleteFromTmpl := func(o Object) error {
 		u, err := loadTextTemplate(o, *v)
 		if err != nil {
 			return err
 		}
-		return deleteBytes(ctx, client, o.gvr, u)
+		return deleteBytes(ctx, client, o.GVR, u)
 	}
-	return deleteFromTmpl(object{
-		gvr:  gvr.Cluster,
-		text: templates.Cluster,
+	return deleteFromTmpl(Object{
+		GVR:  gvr.Cluster,
+		Text: templates.Cluster,
 	})
 }
 
@@ -219,8 +226,8 @@ func areMachinesReady(ctx context.Context, client dynamic.Interface, state *vari
 	return true, nil
 }
 
-func loadTextTemplate(o object, variables variables.Variables) (*unstructured.Unstructured, error) {
-	t, err := template.New(o.gvr.Resource).Parse(o.text)
+func loadTextTemplate(o Object, variables variables.Variables) (*unstructured.Unstructured, error) {
+	t, err := template.New(o.GVR.Resource).Parse(o.Text)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +270,7 @@ func toUnstructured(o []byte) (*unstructured.Unstructured, error) {
 	}
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return nil, errors.New("invalid unstructured object")
+		return nil, errors.New("invalid unstructured Object")
 	}
 	return u, nil
 }
