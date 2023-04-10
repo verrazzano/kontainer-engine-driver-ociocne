@@ -376,25 +376,35 @@ func (d *OCIOCNEDriver) Create(ctx context.Context, opts *types.DriverOptions, _
 }
 
 // Update implements driver interface
-func (d *OCIOCNEDriver) Update(ctx context.Context, clusterInfo *types.ClusterInfo, opts *types.DriverOptions) (*types.ClusterInfo, error) {
+func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opts *types.DriverOptions) (*types.ClusterInfo, error) {
 	d.Logger.Infof("capi.driver.Update(...) called")
 
-	state, err := d.loadVariables(clusterInfo)
+	state, err := d.loadVariables(info)
 	if err != nil {
 		return nil, err
 	}
-	state.SetUpdateOptions(opts)
-	if err := state.Validate(); err != nil {
-		return clusterInfo, err
+	newState, err := variables.NewFromOptions(ctx, opts)
+	if err != nil {
+		return nil, err
 	}
-	if err := storeVariables(clusterInfo, state); err != nil {
-		return clusterInfo, err
+	if newState.KubernetesVersion != state.KubernetesVersion {
+		state.SetKubernetesVersion(newState.KubernetesVersion)
+		if err := d.SetVersion(ctx, info, &types.KubernetesVersion{Version: state.KubernetesVersion}); err != nil {
+			return nil, fmt.Errorf("failed to upgrade kubernetes version for managed cluster %s: %v", state.Name, err)
+		}
 	}
-	if err := doCreateOrUpdate(ctx, state); err != nil {
-		d.Logger.Errorf("Driver.Update: %v", err)
-		return clusterInfo, err
+
+	di, err := k8s.InjectedDynamic()
+	if err != nil {
+		return nil, err
 	}
-	return clusterInfo, nil
+	if err := capi.UpdateClusterResources(ctx, di, state); err != nil {
+		return nil, fmt.Errorf("Failed to update cluster resources for %s: %v", state.Name, err)
+	}
+	if err := storeVariables(info, state); err != nil {
+		return info, err
+	}
+	return info, nil
 }
 
 func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) (*types.ClusterInfo, error) {
@@ -510,13 +520,17 @@ func (d *OCIOCNEDriver) SetClusterSize(ctx context.Context, info *types.ClusterI
 // SetVersion sets the Kubernetes Version of cluster
 func (d *OCIOCNEDriver) SetVersion(ctx context.Context, info *types.ClusterInfo, version *types.KubernetesVersion) error {
 	d.Logger.Infof("capi.driver.SetVersion(...) called")
-	_, err := d.loadVariables(info)
+	state, err := d.loadVariables(info)
 	if err != nil {
 		return err
 	}
+	di, err := k8s.InjectedDynamic()
+	if err != nil {
+		return fmt.Errorf("failed to create dynamic client for admin cluster %s: %v", state.Name, err)
+	}
 	// update version is currently asynchronous
 	d.Logger.Info("Cluster version (masters and node pools) updated successfully")
-	return nil
+	return capi.UpgradeClusterVersion(ctx, di, state, version.Version)
 }
 
 func (d *OCIOCNEDriver) GetCapabilities(_ context.Context) (*types.Capabilities, error) {
