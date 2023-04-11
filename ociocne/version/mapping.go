@@ -9,6 +9,7 @@ type Properties struct {
 	CalicoTag       string
 }
 
+// Mapping has the well-known properties for supported OCNE Kubernetes versions
 var Mapping = map[string]Properties{
 	"v1.24.8": {
 		ETCDImageTag:    "3.5.3",
@@ -17,7 +18,7 @@ var Mapping = map[string]Properties{
 	},
 	"v1.25.7": {
 		ETCDImageTag:    "3.5.6",
-		CoreDNSImageTag: "1.9.3",
+		CoreDNSImageTag: "v1.9.3",
 		CalicoTag:       "v3.25.0",
 	},
 }

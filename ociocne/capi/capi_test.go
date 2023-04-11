@@ -26,7 +26,7 @@ func TestRenderObjects(t *testing.T) {
 		NodeShape:               "VM.Standard.E4.Flex",
 		ControlPlaneShape:       "VM.Standard.E4.Flex",
 		KubernetesVersion:       "v1.24.8",
-		CalicoTag:               variables.DefaultCalicoTag,
+		CalicoTag:               "v3.25.0",
 		CalicoRegistry:          variables.DefaultRegistryCNE,
 		CCMImage:                variables.DefaultCCMImage,
 		NodeOCPUs:               1,
