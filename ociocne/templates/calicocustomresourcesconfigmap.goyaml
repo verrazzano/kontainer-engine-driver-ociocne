@@ -19,7 +19,7 @@ data:
           encapsulation: VXLAN
           # natOutgoing: Enabled
           # nodeSelector: all()
-      registry: {{ .ControlPlaneRegistry }}
+      registry: {{ .CalicoRegistry }}
     ---
     # This section configures the Calico API server.
     # For more information, see: https://projectcalico.docs.tigera.io/master/reference/installation/api#operator.tigera.io/v1.APIServer

@@ -32,7 +32,7 @@ const (
 	DefaultRegistryCNE        = "container-registry.oracle.com/olcne"
 	DefaultETCDImageTag       = "3.5.3"
 	DefaultCoreDNSImageTag    = "1.8.6"
-	DefaultCalicoTag          = "v3.25.0"
+	DefaultCalicoTag          = "v1.29.0"
 	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultCSIRegistry        = "k8s.gcr.io/sig-storage"
