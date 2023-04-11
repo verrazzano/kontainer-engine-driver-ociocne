@@ -134,13 +134,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultString: variables.DefaultRegistryCNE,
 		},
 	}
-	driverFlag.Options[driverconst.CalicoTag] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image tag for calico images",
-		Default: &types.Default{
-			DefaultString: variables.DefaultCalicoTag,
-		},
-	}
 	driverFlag.Options[driverconst.CCMImage] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The image for OCI cloud-controller-manager",
@@ -188,20 +181,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Usage: "Install Verrazzano addon",
 		Default: &types.Default{
 			DefaultBool: true,
-		},
-	}
-	driverFlag.Options[driverconst.ETCDImageTag] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image tag to use for ETCD",
-		Default: &types.Default{
-			DefaultString: variables.DefaultETCDImageTag,
-		},
-	}
-	driverFlag.Options[driverconst.CoreDNSImageTag] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image tag to use for CoreDNS",
-		Default: &types.Default{
-			DefaultString: variables.DefaultCoreDNSImageTag,
 		},
 	}
 	driverFlag.Options[driverconst.KubernetesVersion] = &types.Flag{
@@ -389,7 +368,9 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 	}
 
 	isKubernetesUpgrade := state.IsKubernetesUpgrade(newState)
-	state.SetUpdateValues(newState)
+	if err := state.SetUpdateValues(newState); err != nil {
+		return info, err
+	}
 	if err := storeVariables(info, state); err != nil {
 		return info, err
 	}
