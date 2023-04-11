@@ -85,6 +85,7 @@ type (
 		ControlPlaneShape       string
 		KubernetesVersion       string
 		SanitizedK8sVersion     string
+		K8sUpgradeInProgress    bool
 		NodeOCPUs               int64
 		ControlPlaneOCPUs       int64
 		NodeMemoryGbs           int64
@@ -200,9 +201,16 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	return v, nil
 }
 
-func (v *Variables) SetKubernetesVersion(version string) {
-	v.KubernetesVersion = version
-	v.SanitizedK8sVersion = sanitizeK8sVersion(version)
+func (v *Variables) IsKubernetesUpgrade(vNew *Variables) bool {
+	if v.K8sUpgradeInProgress {
+		return true
+	}
+	return v.KubernetesVersion != vNew.KubernetesVersion
+}
+
+func (v *Variables) SetUpdateValues(vNew *Variables) {
+	v.KubernetesVersion = vNew.KubernetesVersion
+	v.SanitizedK8sVersion = sanitizeK8sVersion(vNew.KubernetesVersion)
 }
 
 // SetDynamicValues sets dynamic values from OCI in the Variables

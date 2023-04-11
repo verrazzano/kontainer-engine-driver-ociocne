@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
@@ -34,7 +35,7 @@ func InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, 
 	}
 
 	// Create the Verrazzano Resource if not exists
-	if err := cruObject(ctx, di, Object{
+	if err := cruObject(ctx, di, object.Object{
 		GVR:  gvr.Verrazzano,
 		Text: v.VerrazzanoResource,
 	}, v, false); err != nil {
@@ -42,7 +43,7 @@ func InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, 
 	}
 
 	// Create the Verrazzano Managed Cluster Resource if not exists
-	if err := cruObject(ctx, adminDi, Object{
+	if err := cruObject(ctx, adminDi, object.Object{
 		GVR:  gvr.VerrazzanoManagedCluster,
 		Text: templates.VMC,
 	}, v, false); err != nil {
