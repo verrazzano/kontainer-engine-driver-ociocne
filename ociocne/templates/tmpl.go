@@ -29,8 +29,17 @@ var OCNEConfigTemplate string
 //go:embed machinedeployment.goyaml
 var MachineDeployment string
 
-//go:embed calicoresourceset.goyaml
+//go:embed calicoresourceset-customresource.goyaml
 var CalicoResourceSet string
+
+//go:embed calicoresourceset-tigeracrd-initial.goyaml
+var CalicoTigeraCRDInitialResourceSet string
+
+//go:embed calicoresourceset-tigeracrd-final.goyaml
+var CalicoTigeraCRDFinalResourceSet string
+
+//go:embed calicoresourceset-tigera-operator.goyaml
+var CalicoTigeraOperatorResourceSet string
 
 //go:embed ccmresourceset.goyaml
 var CCMResourceSet string
@@ -44,8 +53,17 @@ var CCMConfigMap string
 //go:embed csiconfigmap.goyaml
 var CSIConfigMap string
 
-//go:embed calicoconfigmap.goyaml
+//go:embed calicocustomresourcesconfigmap.goyaml
 var CalicoConfigMap string
+
+//go:embed calicotigeracrd-initial-configmap.goyaml
+var CalicoTigeraCRDInitialConfigMap string
+
+//go:embed calicotigeracrd-final-configmap.goyaml
+var CalicoTigeraCRDFinalConfigMap string
+
+//go:embed calicotigeraoperator-configmap.goyaml
+var CalicoTigeraaOperatorConfigMap string
 
 //go:embed vporesourceset.goyaml
 var VPOResourceSet string
