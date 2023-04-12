@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi/object"
 	gvr "github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
@@ -75,7 +76,19 @@ func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernete
 	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
 		return fmt.Errorf("failed to create CAPI credentials: %v", err)
 	}
-	for _, o := range createObjects(v) {
+	return createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
+}
+
+// CreateOrUpdateNodeGroup creates or updates the worker node group replica count
+func CreateOrUpdateNodeGroup(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
+	return createOrUpdateObject(ctx, client, object.Object{
+		GVR:  gvr.MachineDeployment,
+		Text: templates.MachineDeployment,
+	}, v)
+}
+
+func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interface, objects []object.Object, v *variables.Variables) error {
+	for _, o := range objects {
 		if err := createOrUpdateObject(ctx, dynamicInterface, o, v); err != nil {
 			return fmt.Errorf("failed to create Object %s/%s/%s: %v", o.GVR.Group, o.GVR.Version, o.GVR.Resource, err)
 		}
@@ -83,15 +96,11 @@ func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernete
 	return nil
 }
 
-// CreateOrUpdateNodeGroup creates or updates the worker node group replica count
-func CreateOrUpdateNodeGroup(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	return createOrUpdateObject(ctx, client, Object{
-		GVR:  gvr.MachineDeployment,
-		Text: templates.MachineDeployment,
-	}, v)
+func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables) error {
+	return cruObject(ctx, client, o, v, true)
 }
 
-func cruObject(ctx context.Context, client dynamic.Interface, o Object, v *variables.Variables, update bool) error {
+func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables, update bool) error {
 	toCreateObject, err := loadTextTemplate(o, *v)
 	if err != nil {
 		return err
@@ -117,20 +126,16 @@ func cruObject(ctx context.Context, client dynamic.Interface, o Object, v *varia
 	return nil
 }
 
-func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o Object, v *variables.Variables) error {
-	return cruObject(ctx, client, o, v, true)
-}
-
 // DeleteCluster deletes the cluster
 func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	deleteFromTmpl := func(o Object) error {
+	deleteFromTmpl := func(o object.Object) error {
 		u, err := loadTextTemplate(o, *v)
 		if err != nil {
 			return err
 		}
 		return deleteBytes(ctx, client, o.GVR, u)
 	}
-	return deleteFromTmpl(Object{
+	return deleteFromTmpl(object.Object{
 		GVR:  gvr.Cluster,
 		Text: templates.Cluster,
 	})
@@ -230,7 +235,7 @@ func areMachinesReady(ctx context.Context, client dynamic.Interface, state *vari
 	return true, nil
 }
 
-func loadTextTemplate(o Object, variables variables.Variables) (*unstructured.Unstructured, error) {
+func loadTextTemplate(o object.Object, variables variables.Variables) (*unstructured.Unstructured, error) {
 	t, err := template.New(o.GVR.Resource).Parse(o.Text)
 	if err != nil {
 		return nil, err

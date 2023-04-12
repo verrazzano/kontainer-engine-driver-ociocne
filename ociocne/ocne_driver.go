@@ -134,13 +134,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultString: variables.DefaultRegistryCNE,
 		},
 	}
-	driverFlag.Options[driverconst.CalicoTag] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image tag for calico images",
-		Default: &types.Default{
-			DefaultString: variables.DefaultCalicoTag,
-		},
-	}
 	driverFlag.Options[driverconst.CCMImage] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The image for OCI cloud-controller-manager",
@@ -188,20 +181,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Usage: "Install Verrazzano addon",
 		Default: &types.Default{
 			DefaultBool: true,
-		},
-	}
-	driverFlag.Options[driverconst.ETCDImageTag] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image tag to use for ETCD",
-		Default: &types.Default{
-			DefaultString: variables.DefaultETCDImageTag,
-		},
-	}
-	driverFlag.Options[driverconst.CoreDNSImageTag] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image tag to use for CoreDNS",
-		Default: &types.Default{
-			DefaultString: variables.DefaultCoreDNSImageTag,
 		},
 	}
 	driverFlag.Options[driverconst.KubernetesVersion] = &types.Flag{
@@ -387,10 +366,24 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 	if err != nil {
 		return nil, err
 	}
-	if newState.KubernetesVersion != state.KubernetesVersion {
-		state.SetKubernetesVersion(newState.KubernetesVersion)
+
+	isKubernetesUpgrade := state.IsKubernetesUpgrade(newState)
+	if err := state.SetUpdateValues(newState); err != nil {
+		return info, err
+	}
+	if err := storeVariables(info, state); err != nil {
+		return info, err
+	}
+	// the kubernetes version has changed, so we must upgrade the CAPI cluster's kubernetes version
+	if isKubernetesUpgrade {
+		d.Logger.Infof("upgrading kubernetes version for managed cluster %s to %s", state.Name, state.KubernetesVersion)
 		if err := d.SetVersion(ctx, info, &types.KubernetesVersion{Version: state.KubernetesVersion}); err != nil {
 			return nil, fmt.Errorf("failed to upgrade kubernetes version for managed cluster %s: %v", state.Name, err)
+		}
+		d.Logger.Infof("completed kubernetes version upgrade for managed cluster %s", state.Name)
+		state.K8sUpgradeInProgress = false
+		if err := storeVariables(info, state); err != nil {
+			return info, err
 		}
 	}
 
@@ -399,11 +392,9 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 		return nil, err
 	}
 	if err := capi.UpdateClusterResources(ctx, di, state); err != nil {
-		return nil, fmt.Errorf("Failed to update cluster resources for %s: %v", state.Name, err)
+		return nil, fmt.Errorf("failed to update cluster resources for %s: %v", state.Name, err)
 	}
-	if err := storeVariables(info, state); err != nil {
-		return info, err
-	}
+
 	return info, nil
 }
 
@@ -528,9 +519,7 @@ func (d *OCIOCNEDriver) SetVersion(ctx context.Context, info *types.ClusterInfo,
 	if err != nil {
 		return fmt.Errorf("failed to create dynamic client for admin cluster %s: %v", state.Name, err)
 	}
-	// update version is currently asynchronous
-	d.Logger.Info("Cluster version (masters and node pools) updated successfully")
-	return capi.UpgradeClusterVersion(ctx, di, state, version.Version)
+	return capi.UpgradeClusterVersion(ctx, di, state)
 }
 
 func (d *OCIOCNEDriver) GetCapabilities(_ context.Context) (*types.Capabilities, error) {
@@ -586,7 +575,7 @@ func storeVariables(info *types.ClusterInfo, v *variables.Variables) error {
 }
 
 func (d *OCIOCNEDriver) loadVariables(info *types.ClusterInfo) (*variables.Variables, error) {
-	d.Logger.Infof("capi.driver.GetState(...) called")
+	d.Logger.Infof("capi.driver.loadVariables(...) called")
 	state := &variables.Variables{}
 	err := json.Unmarshal([]byte(info.Metadata[metadataKey]), &state)
 	return state, err
