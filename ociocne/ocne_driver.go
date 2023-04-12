@@ -110,7 +110,7 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The registry to use for control plane images",
 		Default: &types.Default{
-			DefaultString: variables.DefaultRegistryCNE,
+			DefaultString: fmt.Sprintf("%s/%s", variables.DefaultRegistry, variables.DefaultCNEPath),
 		},
 	}
 	driverFlag.Options[driverconst.CSIRegistry] = &types.Flag{
@@ -131,7 +131,14 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The registry to use for calico cni images",
 		Default: &types.Default{
-			DefaultString: variables.DefaultRegistryCNE,
+			DefaultString: variables.DefaultRegistry,
+		},
+	}
+	driverFlag.Options[driverconst.CalicoImagePath] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The repository path to use for calico cni images",
+		Default: &types.Default{
+			DefaultString: variables.DefaultCNEPath,
 		},
 	}
 	driverFlag.Options[driverconst.CCMImage] = &types.Flag{

@@ -54,6 +54,15 @@ var ccm = []Object{
 }
 
 var cni = []Object{
+	// Tigera CRDs
+	{GVR: gvr.ConfigMap, Text: templates.CalicoTigeraCRDInitialConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoTigeraCRDInitialResourceSet},
+	{GVR: gvr.ConfigMap, Text: templates.CalicoTigeraCRDFinalConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoTigeraCRDFinalResourceSet},
+	// Tigera Operator
+	{GVR: gvr.ConfigMap, Text: templates.CalicoTigeraaOperatorConfigMap},
+	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoTigeraOperatorResourceSet},
+	// Calico resources
 	{GVR: gvr.ConfigMap, Text: templates.CalicoConfigMap},
 	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoResourceSet},
 }

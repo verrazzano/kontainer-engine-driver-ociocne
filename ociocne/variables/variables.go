@@ -30,7 +30,9 @@ const (
 	DefaultVMShape                 = "VM.Standard.E4.Flex"
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
-	DefaultRegistryCNE        = "container-registry.oracle.com/olcne"
+	DefaultCNEPath            = "olcne"
+	DefaultRegistry           = "container-registry.oracle.com"
+	DefaultTigeraTag          = "v1.29.0"
 	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultCSIRegistry        = "k8s.gcr.io/sig-storage"
@@ -97,7 +99,8 @@ type (
 		PostOCNECommands        []string
 		ControlPlaneRegistry    string
 		CalicoRegistry          string
-		CalicoTag               string
+		CalicoImagePath         string
+		TigeraTag               string
 		ETCDImageTag            string
 		CoreDNSImageTag         string
 		CCMImage                string
@@ -168,6 +171,8 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		// Image settings
 		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
 		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
+		CalicoImagePath:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
+		TigeraTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
 		CCMImage:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
 		OCICSIImage:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.OCICSIImage, "ociCsiImage").(string),
 		CSIRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CSIRegistry, "csiRegistry").(string),
@@ -282,7 +287,7 @@ func (v *Variables) SetVersionMapping() error {
 	}
 	v.ETCDImageTag = props.ETCDImageTag
 	v.CoreDNSImageTag = props.CoreDNSImageTag
-	v.CalicoTag = props.CalicoTag
+	v.TigeraTag = props.TigeraTag
 	return nil
 }
 

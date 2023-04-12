@@ -6,7 +6,7 @@ package version
 type Properties struct {
 	ETCDImageTag    string
 	CoreDNSImageTag string
-	CalicoTag       string
+	TigeraTag       string
 }
 
 // Mapping has the well-known properties for supported OCNE Kubernetes versions
@@ -14,11 +14,11 @@ var Mapping = map[string]Properties{
 	"v1.24.8": {
 		ETCDImageTag:    "3.5.3",
 		CoreDNSImageTag: "1.8.6",
-		CalicoTag:       "v3.25.0",
+		TigeraTag:       "v1.29.0",
 	},
 	"v1.25.7": {
 		ETCDImageTag:    "3.5.6",
 		CoreDNSImageTag: "v1.9.3",
-		CalicoTag:       "v3.25.0",
+		TigeraTag:       "v1.29.0",
 	},
 }

@@ -26,8 +26,9 @@ func TestRenderObjects(t *testing.T) {
 		NodeShape:               "VM.Standard.E4.Flex",
 		ControlPlaneShape:       "VM.Standard.E4.Flex",
 		KubernetesVersion:       "v1.24.8",
-		CalicoTag:               "v3.25.0",
-		CalicoRegistry:          variables.DefaultRegistryCNE,
+		TigeraTag:               variables.DefaultTigeraTag,
+		CalicoRegistry:          variables.DefaultRegistry,
+		CalicoImagePath:         variables.DefaultCNEPath,
 		CCMImage:                variables.DefaultCCMImage,
 		NodeOCPUs:               1,
 		ControlPlaneOCPUs:       1,
@@ -42,6 +43,11 @@ func TestRenderObjects(t *testing.T) {
 		Tenancy:                 "xyz",
 		User:                    "xyz",
 		ProviderId:              variables.ProviderId,
+
+		InstallVerrazzano: true,
+		InstallCSI:        true,
+		InstallCCM:        true,
+		InstallCalico:     true,
 	}
 
 	for _, o := range object.CreateObjects(&v) {

@@ -33,12 +33,15 @@ const (
 
 	ControlPlaneRegistry = "control-plane-registry"
 	CalicoRegistry       = "calico-image-registry"
-	CCMImage             = "ccm-image"
-	OCICSIImage          = "oci-csi-image"
-	CSIRegistry          = "csi-registry"
-	InstallCalico        = "install-calico"
-	InstallCCM           = "install-ccm"
-	InstallCSI           = "install-csi"
+	CalicoImagePath      = "calico-image-path"
+	// TigeraTag used to determine version of tigera operator
+	TigeraTag     = "tigera-image-tag"
+	CCMImage      = "ccm-image"
+	OCICSIImage   = "oci-csi-image"
+	CSIRegistry   = "csi-registry"
+	InstallCalico = "install-calico"
+	InstallCCM    = "install-ccm"
+	InstallCSI    = "install-csi"
 
 	InstallVerrazzano  = "install-verrazzano"
 	VerrazzanoResource = "verrazzano-resource"
