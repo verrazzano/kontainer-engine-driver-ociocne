@@ -1,7 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package capi
+package object
 
 import (
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func createObjects(v *variables.Variables) []Object {
+func CreateObjects(v *variables.Variables) []Object {
 	var res []Object
 
 	// Create addons if they are enabled
@@ -27,6 +27,8 @@ func createObjects(v *variables.Variables) []Object {
 		res = append(res, vpo...)
 	}
 	res = append(res, capi...)
+	res = append(res, ControlPlane...)
+	res = append(res, Workers...)
 	return res
 }
 
@@ -65,13 +67,19 @@ var cni = []Object{
 	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoResourceSet},
 }
 
+var ControlPlane = []Object{
+	{GVR: gvr.OCNEControlPlane, Text: templates.OCNEControlPlane},
+	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIControlPlaneMachineTemplate},
+}
+
+var Workers = []Object{
+	{GVR: gvr.MachineDeployment, Text: templates.MachineDeployment},
+	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIMachineTemplate},
+}
+
 var capi = []Object{
 	{GVR: gvr.Cluster, Text: templates.Cluster},
 	{GVR: gvr.ClusterIdentity, Text: templates.ClusterIdentity},
 	{GVR: gvr.OCICluster, Text: templates.OCICluster},
 	{GVR: gvr.OCNEConfigTemplate, Text: templates.OCNEConfigTemplate},
-	{GVR: gvr.OCNEControlPlane, Text: templates.OCNEControlPlane},
-	{GVR: gvr.MachineDeployment, Text: templates.MachineDeployment},
-	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIMachineTemplate},
-	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIControlPlaneMachineTemplate},
 }

@@ -5,6 +5,7 @@ package capi
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
 	"testing"
 )
@@ -26,7 +27,7 @@ func TestRenderObjects(t *testing.T) {
 		ControlPlaneShape:       "VM.Standard.E4.Flex",
 		KubernetesVersion:       "v1.24.8",
 		TigeraTag:               variables.DefaultTigeraTag,
-		CalicoRegistry:          variables.DefaultRegistryCNE,
+		CalicoRegistry:          variables.DefaultRegistry,
 		CCMImage:                variables.DefaultCCMImage,
 		NodeOCPUs:               1,
 		ControlPlaneOCPUs:       1,
@@ -43,7 +44,7 @@ func TestRenderObjects(t *testing.T) {
 		ProviderId:              variables.ProviderId,
 	}
 
-	for _, o := range createObjects(&v) {
+	for _, o := range object.CreateObjects(&v) {
 		u, err := loadTextTemplate(o, v)
 		assert.NoError(t, err)
 		assert.NotNil(t, u)

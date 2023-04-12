@@ -33,7 +33,6 @@ spec:
         local:
           imageRepository: {{.ControlPlaneRegistry}}
           imageTag: {{.ETCDImageTag}}
-      kubernetesVersion: {{.KubernetesVersion}}
       networking: {}
       scheduler: {}
       imageRepository: {{.ControlPlaneRegistry}}

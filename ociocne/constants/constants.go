@@ -31,8 +31,6 @@ const (
 	ControlPlaneShape     = "control-plane-shape"
 	ControlPlaneVolumeGbs = "control-plane-volume-gbs"
 
-	ETCDImageTag         = "etcd-image-tag"
-	CoreDNSImageTag      = "core-dns-image-tag"
 	ControlPlaneRegistry = "control-plane-registry"
 	CalicoRegistry       = "calico-image-registry"
 	CalicoImagePath      = "calico-image-path"

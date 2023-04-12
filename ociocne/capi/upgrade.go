@@ -5,10 +5,21 @@ package capi
 
 import (
 	"context"
+	"fmt"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
 	"k8s.io/client-go/dynamic"
 )
 
-func UpgradeClusterVersion(ctx context.Context, di dynamic.Interface, v *variables.Variables, version string) error {
-	return nil
+func UpgradeClusterVersion(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
+	if err := createOrUpdateObjects(ctx, di, object.ControlPlane, v); err != nil {
+		return fmt.Errorf("error updating control plane kubernetes version: %v", err)
+	}
+	if err := WaitForCAPIClusterReady(ctx, di, v); err != nil {
+		return err
+	}
+	if err := createOrUpdateObjects(ctx, di, object.Workers, v); err != nil {
+		return fmt.Errorf("error updating worker kubernetes version: %v", err)
+	}
+	return WaitForCAPIClusterReady(ctx, di, v)
 }

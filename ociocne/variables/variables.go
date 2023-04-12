@@ -13,6 +13,7 @@ import (
 	driverconst "github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/constants"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/k8s"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/oci"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/version"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -86,6 +87,7 @@ type (
 		ControlPlaneShape       string
 		KubernetesVersion       string
 		SanitizedK8sVersion     string
+		K8sUpgradeInProgress    bool
 		NodeOCPUs               int64
 		ControlPlaneOCPUs       int64
 		NodeMemoryGbs           int64
@@ -170,8 +172,6 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 		// Image settings
 		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
-		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
-		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
 		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
 		CalicoImagePath:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
 		TigeraTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
@@ -197,15 +197,27 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	v.Namespace = v.Name
 	v.SanitizedK8sVersion = sanitizeK8sVersion(v.KubernetesVersion)
 
+	if err := v.SetVersionMapping(); err != nil {
+		return v, err
+	}
+
 	if err := v.SetDynamicValues(ctx); err != nil {
 		return v, err
 	}
 	return v, nil
 }
 
-func (v *Variables) SetKubernetesVersion(version string) {
-	v.KubernetesVersion = version
-	v.SanitizedK8sVersion = sanitizeK8sVersion(version)
+func (v *Variables) IsKubernetesUpgrade(vNew *Variables) bool {
+	if v.K8sUpgradeInProgress {
+		return true
+	}
+	return v.KubernetesVersion != vNew.KubernetesVersion
+}
+
+func (v *Variables) SetUpdateValues(vNew *Variables) error {
+	v.KubernetesVersion = vNew.KubernetesVersion
+	v.SanitizedK8sVersion = sanitizeK8sVersion(vNew.KubernetesVersion)
+	return v.SetVersionMapping()
 }
 
 // SetDynamicValues sets dynamic values from OCI in the Variables
@@ -268,6 +280,17 @@ func (v *Variables) Version() *types.KubernetesVersion {
 	return &types.KubernetesVersion{
 		Version: v.KubernetesVersion,
 	}
+}
+
+func (v *Variables) SetVersionMapping() error {
+	props, ok := version.Mapping[v.KubernetesVersion]
+	if !ok {
+		return fmt.Errorf("unknown kubernetes version %s", v.KubernetesVersion)
+	}
+	v.ETCDImageTag = props.ETCDImageTag
+	v.CoreDNSImageTag = props.CoreDNSImageTag
+	v.TigeraTag = props.TigeraTag
+	return nil
 }
 
 // Validate asserts values are acceptable for cluster lifecycle operations
