@@ -134,9 +134,9 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultString: variables.DefaultRegistry,
 		},
 	}
-	driverFlag.Options[driverconst.CalicoRegistry] = &types.Flag{
+	driverFlag.Options[driverconst.CalicoImagePath] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The registry to use for calico cni images",
+		Usage: "The repository path to use for calico cni images",
 		Default: &types.Default{
 			DefaultString: variables.DefaultCNEPath,
 		},

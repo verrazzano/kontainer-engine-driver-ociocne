@@ -28,6 +28,7 @@ func TestRenderObjects(t *testing.T) {
 		KubernetesVersion:       "v1.24.8",
 		TigeraTag:               variables.DefaultTigeraTag,
 		CalicoRegistry:          variables.DefaultRegistry,
+		CalicoImagePath:         variables.DefaultCNEPath,
 		CCMImage:                variables.DefaultCCMImage,
 		NodeOCPUs:               1,
 		ControlPlaneOCPUs:       1,
@@ -42,6 +43,11 @@ func TestRenderObjects(t *testing.T) {
 		Tenancy:                 "xyz",
 		User:                    "xyz",
 		ProviderId:              variables.ProviderId,
+
+		InstallVerrazzano: true,
+		InstallCSI:        true,
+		InstallCCM:        true,
+		InstallCalico:     true,
 	}
 
 	for _, o := range object.CreateObjects(&v) {

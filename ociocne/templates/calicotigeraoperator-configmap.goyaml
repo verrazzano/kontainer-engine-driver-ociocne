@@ -288,7 +288,7 @@ data:
           dnsPolicy: ClusterFirstWithHostNet
           containers:
             - name: tigera-operator
-              image: {{.ControlPlaneRegistry}}/tigera-operator:{{.CalicoTag}}
+              image: {{ .CalicoRegistry }}/{{.CalicoImagePath}}/tigera-operator:{{.TigeraTag}}
               imagePullPolicy: IfNotPresent
               command:
                 - operator

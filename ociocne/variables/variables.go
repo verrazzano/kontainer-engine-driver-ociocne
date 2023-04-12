@@ -32,8 +32,6 @@ const (
 
 	DefaultCNEPath            = "olcne"
 	DefaultRegistry           = "container-registry.oracle.com"
-	DefaultETCDImageTag       = "3.5.3"
-	DefaultCoreDNSImageTag    = "1.8.6"
 	DefaultTigeraTag          = "v1.29.0"
 	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
