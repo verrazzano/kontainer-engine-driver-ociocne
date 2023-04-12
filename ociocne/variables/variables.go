@@ -29,10 +29,11 @@ const (
 	DefaultVMShape                 = "VM.Standard.E4.Flex"
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
-	DefaultRegistryCNE        = "container-registry.oracle.com/olcne"
+	DefaultCNEPath            = "olcne"
+	DefaultRegistry           = "container-registry.oracle.com"
 	DefaultETCDImageTag       = "3.5.3"
 	DefaultCoreDNSImageTag    = "1.8.6"
-	DefaultCalicoTag          = "v1.29.0"
+	DefaultTigeraTag          = "v1.29.0"
 	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultCSIRegistry        = "k8s.gcr.io/sig-storage"
@@ -98,7 +99,8 @@ type (
 		PostOCNECommands        []string
 		ControlPlaneRegistry    string
 		CalicoRegistry          string
-		CalicoTag               string
+		CalicoImagePath         string
+		TigeraTag               string
 		ETCDImageTag            string
 		CoreDNSImageTag         string
 		CCMImage                string
@@ -171,7 +173,8 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDImageTag, "etcdImageTag").(string),
 		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSImageTag, "coreDnsImageTag").(string),
 		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
-		CalicoTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoTag, "calicoImageTag").(string),
+		CalicoImagePath:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
+		TigeraTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
 		CCMImage:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
 		OCICSIImage:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.OCICSIImage, "ociCsiImage").(string),
 		CSIRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CSIRegistry, "csiRegistry").(string),

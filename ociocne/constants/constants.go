@@ -35,8 +35,9 @@ const (
 	CoreDNSImageTag      = "core-dns-image-tag"
 	ControlPlaneRegistry = "control-plane-registry"
 	CalicoRegistry       = "calico-image-registry"
-	// CalicoTag used to determine version of tigera operator
-	CalicoTag     = "calico-image-tag"
+	CalicoImagePath      = "calico-image-path"
+	// TigeraTag used to determine version of tigera operator
+	TigeraTag     = "tigera-image-tag"
 	CCMImage      = "ccm-image"
 	OCICSIImage   = "oci-csi-image"
 	CSIRegistry   = "csi-registry"

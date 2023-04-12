@@ -110,7 +110,7 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The registry to use for control plane images",
 		Default: &types.Default{
-			DefaultString: variables.DefaultRegistryCNE,
+			DefaultString: fmt.Sprintf("%s/%s", variables.DefaultRegistry, variables.DefaultCNEPath),
 		},
 	}
 	driverFlag.Options[driverconst.CSIRegistry] = &types.Flag{
@@ -131,14 +131,21 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The registry to use for calico cni images",
 		Default: &types.Default{
-			DefaultString: variables.DefaultRegistryCNE,
+			DefaultString: variables.DefaultRegistry,
 		},
 	}
-	driverFlag.Options[driverconst.CalicoTag] = &types.Flag{
+	driverFlag.Options[driverconst.CalicoRegistry] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The image tag for calico images",
+		Usage: "The registry to use for calico cni images",
 		Default: &types.Default{
-			DefaultString: variables.DefaultCalicoTag,
+			DefaultString: variables.DefaultCNEPath,
+		},
+	}
+	driverFlag.Options[driverconst.TigeraTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The image tag for tigera operator",
+		Default: &types.Default{
+			DefaultString: variables.DefaultTigeraTag,
 		},
 	}
 	driverFlag.Options[driverconst.CCMImage] = &types.Flag{
