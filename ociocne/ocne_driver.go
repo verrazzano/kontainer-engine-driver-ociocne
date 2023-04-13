@@ -242,9 +242,9 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 	}
 	driverFlag.Options[driverconst.NumWorkerNodes] = &types.Flag{
 		Type:  types.IntType,
-		Usage: "Number of worker nodes, default 3.",
+		Usage: "Number of worker nodes, default 1.",
 		Default: &types.Default{
-			DefaultInt: 3,
+			DefaultInt: 1,
 		},
 	}
 	driverFlag.Options[driverconst.NodeVolumeGbs] = &types.Flag{
@@ -318,11 +318,25 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 	driverFlag := types.DriverFlags{
 		Options: make(map[string]*types.Flag),
 	}
-	driverFlag.Options["quantity-per-subnet"] = &types.Flag{
+	driverFlag.Options[driverconst.NumWorkerNodes] = &types.Flag{
 		Type:  types.IntType,
-		Usage: "The updated number of worker nodes in each subnet / availability-domain to update. 1 (default) means no updates",
+		Usage: "Number of worker nodes, default 1.",
+		Default: &types.Default{
+			DefaultInt: 1,
+		},
 	}
-	driverFlag.Options["kubernetes-version"] = &types.Flag{
+	driverFlag.Options[driverconst.NumControlPlaneNodes] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Number of control plane nodes, default 1",
+		Default: &types.Default{
+			DefaultInt: 1,
+		},
+	}
+	driverFlag.Options[driverconst.ImageDisplayName] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "Image for cluster nodes",
+	}
+	driverFlag.Options[driverconst.KubernetesVersion] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The updated Kubernetes version",
 	}
@@ -367,15 +381,15 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 
 	state, err := d.loadVariables(info)
 	if err != nil {
-		return nil, err
+		return info, err
 	}
 	newState, err := variables.NewFromOptions(ctx, opts)
 	if err != nil {
-		return nil, err
+		return info, err
 	}
 
 	isKubernetesUpgrade := state.IsKubernetesUpgrade(newState)
-	if err := state.SetUpdateValues(newState); err != nil {
+	if err := state.SetUpdateValues(ctx, newState); err != nil {
 		return info, err
 	}
 	if err := storeVariables(info, state); err != nil {
@@ -385,7 +399,7 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 	if isKubernetesUpgrade {
 		d.Logger.Infof("upgrading kubernetes version for managed cluster %s to %s", state.Name, state.KubernetesVersion)
 		if err := d.SetVersion(ctx, info, &types.KubernetesVersion{Version: state.KubernetesVersion}); err != nil {
-			return nil, fmt.Errorf("failed to upgrade kubernetes version for managed cluster %s: %v", state.Name, err)
+			return info, fmt.Errorf("failed to upgrade kubernetes version for managed cluster %s: %v", state.Name, err)
 		}
 		d.Logger.Infof("completed kubernetes version upgrade for managed cluster %s", state.Name)
 		state.K8sUpgradeInProgress = false
@@ -396,10 +410,17 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 
 	di, err := k8s.InjectedDynamic()
 	if err != nil {
-		return nil, err
+		return info, err
 	}
-	if err := capi.UpdateClusterResources(ctx, di, state); err != nil {
-		return nil, fmt.Errorf("failed to update cluster resources for %s: %v", state.Name, err)
+	ki, err := k8s.InjectedInterface()
+	if err != nil {
+		return info, err
+	}
+	if err := capi.CreateOrUpdateAllObjects(ctx, ki, di, state); err != nil {
+		return info, fmt.Errorf("failed to update cluster resources for %s: %v", state.Name, err)
+	}
+	if err := capi.WaitForCAPIClusterReady(ctx, di, state); err != nil {
+		return info, err
 	}
 
 	return info, nil
@@ -441,32 +462,32 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 
 	kubeConfigBytes, err := yaml.Marshal(&capiClusterKubeConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling internalConfig: %v", err)
+		return info, fmt.Errorf("error marshaling internalConfig: %v", err)
 	}
 
 	ki, err := k8s.NewInterfaceForKubeconfig(kubeConfigBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create clientset for managed cluster %s: %v", state.Name, err)
+		return info, fmt.Errorf("failed to create clientset for managed cluster %s: %v", state.Name, err)
 	}
 
 	d.Logger.Infof("Creating service account token for cluster %v", state.Name)
 	info.ServiceAccountToken, err = d.generateServiceAccountToken(ctx, ki)
 	if err != nil {
-		return nil, fmt.Errorf("could not generate service account token: %v", err)
+		return info, fmt.Errorf("could not generate service account token: %v", err)
 	}
 
 	di, err := k8s.NewDynamicForKubeconfig(kubeConfigBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
+		return info, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
 	}
 	adminDi, err := k8s.InjectedDynamic()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create dynamic clientset for admin cluster %s: %v", state.Name, err)
+		return info, fmt.Errorf("failed to create dynamic clientset for admin cluster %s: %v", state.Name, err)
 	}
 
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
 	if err := capi.InstallAndRegisterVerrazzano(ctx, ki, di, adminDi, state); err != nil {
-		return nil, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
+		return info, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
 	}
 	d.Logger.Infof("+++ returning from PostCheck +++")
 	return info, nil
@@ -500,15 +521,19 @@ func (d *OCIOCNEDriver) SetClusterSize(ctx context.Context, info *types.ClusterI
 		d.Logger.Errorf("Failed to save new node group size: %v", err)
 		return err
 	}
-	client, err := k8s.InjectedDynamic()
+	di, err := k8s.InjectedDynamic()
 	if err != nil {
-		return fmt.Errorf("failed to get client: %v", err)
+		return fmt.Errorf("failed to get dynamic interface: %v", err)
 	}
-	err = capi.CreateOrUpdateNodeGroup(ctx, client, state)
+	ki, err := k8s.InjectedInterface()
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes interface: %v", err)
+	}
+	err = capi.CreateOrUpdateAllObjects(ctx, ki, di, state)
 	if err != nil {
 		return fmt.Errorf("failed to create objects: %v", err)
 	}
-	err = capi.WaitForCAPIClusterReady(ctx, client, state)
+	err = capi.WaitForCAPIClusterReady(ctx, di, state)
 	if err != nil {
 		return fmt.Errorf("failed to create CAPI Cluster: %v", err)
 	}

@@ -67,24 +67,12 @@ func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, clien
 	return err
 }
 
-func UpdateClusterResources(ctx context.Context, dynamicInterface dynamic.Interface, v *variables.Variables) error {
-	return nil
-}
-
 // CreateOrUpdateAllObjects creates or updates all cluster objects
 func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernetes.Interface, dynamicInterface dynamic.Interface, v *variables.Variables) error {
 	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
 		return fmt.Errorf("failed to create CAPI credentials: %v", err)
 	}
 	return createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
-}
-
-// CreateOrUpdateNodeGroup creates or updates the worker node group replica count
-func CreateOrUpdateNodeGroup(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	return createOrUpdateObject(ctx, client, object.Object{
-		GVR:  gvr.MachineDeployment,
-		Text: templates.MachineDeployment,
-	}, v)
 }
 
 func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interface, objects []object.Object, v *variables.Variables) error {

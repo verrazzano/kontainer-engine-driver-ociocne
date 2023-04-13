@@ -212,10 +212,16 @@ func (v *Variables) IsKubernetesUpgrade(vNew *Variables) bool {
 	return v.KubernetesVersion != vNew.KubernetesVersion
 }
 
-func (v *Variables) SetUpdateValues(vNew *Variables) error {
+func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error {
 	v.KubernetesVersion = vNew.KubernetesVersion
 	v.SanitizedK8sVersion = sanitizeK8sVersion(vNew.KubernetesVersion)
-	return v.SetVersionMapping()
+	if err := v.SetVersionMapping(); err != nil {
+		return err
+	}
+	v.NodeReplicas = vNew.NodeReplicas
+	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
+	v.DisplayName = vNew.DisplayName
+	return v.SetDynamicValues(ctx)
 }
 
 // SetDynamicValues sets dynamic values from OCI in the Variables
