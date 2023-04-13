@@ -4,33 +4,61 @@
 package variables
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestSanitizeVersion(t *testing.T) {
+func TestHashString(t *testing.T) {
+	vars := &Variables{
+		ControlPlaneVolumeGbs: DefaultVolumeGbs,
+		ControlPlaneMemoryGbs: DefaultMemoryGbs,
+		NodeVolumeGbs:         DefaultVolumeGbs,
+		NodeMemoryGbs:         DefaultMemoryGbs,
+	}
+	varsHashPresent := vars
+	varsHashPresent.Hash = "xyz"
 	var tests = []struct {
-		input  string
-		output string
+		name  string
+		va    *Variables
+		vb    *Variables
+		equal bool
 	}{
 		{
-			"1-2-4",
-			"1-2-4",
+			"Equal hashes when equal objects",
+			vars,
+			vars,
+			true,
 		},
 		{
-			"v1.25.8",
-			"v1-25-8",
+			"Equal hashes when hash already computed on equal objects",
+			varsHashPresent,
+			vars,
+			true,
 		},
 		{
-			"v1.24.11+el1",
-			"v1-24-11-el1",
+			"Different hashes when different objects",
+			vars,
+			&Variables{
+				ControlPlaneVolumeGbs: DefaultVolumeGbs,
+				ControlPlaneMemoryGbs: DefaultMemoryGbs,
+				NodeVolumeGbs:         DefaultVolumeGbs,
+				NodeMemoryGbs:         128,
+			},
+			false,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("Replace %s", tt.input), func(t *testing.T) {
-			assert.Equal(t, tt.output, sanitizeK8sVersion(tt.input))
+		t.Run(tt.name, func(t *testing.T) {
+			ha, err := tt.va.HashSum()
+			assert.NoError(t, err)
+			hb, err := tt.vb.HashSum()
+			assert.NoError(t, err)
+			if tt.equal {
+				assert.Equal(t, ha, hb)
+			} else {
+				assert.NotEqual(t, ha, hb)
+			}
 		})
 	}
 }
