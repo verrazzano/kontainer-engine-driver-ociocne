@@ -27,21 +27,59 @@ import (
 )
 
 const (
-	clusterCreationTimeout         = 1 * time.Hour
-	clusterCreationPollingInterval = 30 * time.Second
+	ociTenancyField              = "tenancy"
+	ociUserField                 = "user"
+	ociFingerprintField          = "fingerprint"
+	ociRegionField               = "region"
+	ociPassphraseField           = "passphrase"
+	ociKeyField                  = "key"
+	ociUseInstancePrincipalField = "useInstancePrincipal"
 )
+
+const (
+	clusterPhaseProvisioned = "Provisioned"
+	machinePhaseRunning     = "Running"
+)
+
+type CAPIClient struct {
+	capiTimeout         time.Duration
+	capiPollingInterval time.Duration
+
+	verrazzanoTimeout         time.Duration
+	verrazzanoPollingInterval time.Duration
+}
+
+func NewCAPIClient() *CAPIClient {
+	return &CAPIClient{
+		capiTimeout:               1 * time.Hour,
+		capiPollingInterval:       30 * time.Second,
+		verrazzanoTimeout:         5 * time.Minute,
+		verrazzanoPollingInterval: 10 * time.Second,
+	}
+}
+
+// CreateOrUpdateAllObjects creates or updates all cluster objects
+func (c *CAPIClient) CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernetes.Interface, dynamicInterface dynamic.Interface, v *variables.Variables) error {
+	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
+		return fmt.Errorf("failed to create CAPI credentials: %v", err)
+	}
+	if err := createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v); err != nil {
+		return err
+	}
+	return c.WaitForCAPIClusterReady(ctx, dynamicInterface, v)
+}
 
 // createOrUpdateCAPISecret creates the CAPI secret if it does not already exist
 // if the secret exists, update it in place with the new credentials
 func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, client kubernetes.Interface) error {
 	data := map[string][]byte{
-		"tenancy":              []byte(v.Tenancy),
-		"user":                 []byte(v.User),
-		"fingerprint":          []byte(v.Fingerprint),
-		"region":               []byte(v.Region),
-		"passphrase":           []byte(v.PrivateKeyPassphrase),
-		"key":                  []byte(strings.TrimSpace(strings.ReplaceAll(v.PrivateKey, "\\n", "\n"))),
-		"useInstancePrincipal": []byte("false"),
+		ociTenancyField:              []byte(v.Tenancy),
+		ociUserField:                 []byte(v.User),
+		ociFingerprintField:          []byte(v.Fingerprint),
+		ociRegionField:               []byte(v.Region),
+		ociPassphraseField:           []byte(v.PrivateKeyPassphrase),
+		ociKeyField:                  []byte(strings.TrimSpace(strings.ReplaceAll(v.PrivateKey, "\\n", "\n"))),
+		ociUseInstancePrincipalField: []byte("false"),
 	}
 	current, err := client.CoreV1().Secrets(v.CAPIOCINamespace).Get(ctx, v.CAPICredentialName, metav1.GetOptions{})
 	if err != nil {
@@ -65,14 +103,6 @@ func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, clien
 	current.Data = data
 	_, err = client.CoreV1().Secrets(v.CAPIOCINamespace).Update(ctx, current, metav1.UpdateOptions{})
 	return err
-}
-
-// CreateOrUpdateAllObjects creates or updates all cluster objects
-func CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernetes.Interface, dynamicInterface dynamic.Interface, v *variables.Variables) error {
-	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
-		return fmt.Errorf("failed to create CAPI credentials: %v", err)
-	}
-	return createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
 }
 
 func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interface, objects []object.Object, v *variables.Variables) error {
@@ -129,11 +159,19 @@ func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.V
 	})
 }
 
+func deleteBytes(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, u *unstructured.Unstructured) error {
+	err := client.Resource(gvr).Namespace(u.GetNamespace()).Delete(ctx, u.GetName(), metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
 // WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status, and its Machines
-func WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
-	endTime := time.Now().Add(clusterCreationTimeout)
+func (c *CAPIClient) WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
+	endTime := time.Now().Add(c.capiTimeout)
 	for {
-		time.Sleep(clusterCreationPollingInterval)
+		time.Sleep(c.capiPollingInterval)
 		cluster, err := client.Resource(gvr.Cluster).Namespace(state.Namespace).Get(ctx, state.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -181,7 +219,7 @@ func isClusterReady(cluster *unstructured.Unstructured) bool {
 		return false
 	}
 	phaseString, ok := phase.(string)
-	if !ok || phaseString != "Provisioned" {
+	if !ok || phaseString != clusterPhaseProvisioned {
 		return false
 	}
 	return true
@@ -216,7 +254,7 @@ func areMachinesReady(ctx context.Context, client dynamic.Interface, state *vari
 		if !ok {
 			return false, nil
 		}
-		if phaseString != "Running" {
+		if phaseString != machinePhaseRunning {
 			return false, nil
 		}
 	}
@@ -243,14 +281,6 @@ func loadTextTemplate(o object.Object, variables variables.Variables) (*unstruct
 func createIfNotExists(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, u *unstructured.Unstructured) error {
 	_, err := client.Resource(gvr).Namespace(u.GetNamespace()).Create(ctx, u, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
-		return nil
-	}
-	return err
-}
-
-func deleteBytes(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, u *unstructured.Unstructured) error {
-	err := client.Resource(gvr).Namespace(u.GetNamespace()).Delete(ctx, u.GetName(), metav1.DeleteOptions{})
-	if apierrors.IsNotFound(err) {
 		return nil
 	}
 	return err
