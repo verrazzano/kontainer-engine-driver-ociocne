@@ -213,7 +213,6 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.NodeReplicas = vNew.NodeReplicas
 	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
 	v.ImageDisplayName = vNew.ImageDisplayName
-	v.VerrazzanoResource = vNew.VerrazzanoResource
 	v.NodeOCPUs = vNew.NodeOCPUs
 	v.ControlPlaneOCPUs = vNew.ControlPlaneOCPUs
 	v.NodeMemoryGbs = vNew.NodeMemoryGbs

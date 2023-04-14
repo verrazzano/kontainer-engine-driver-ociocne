@@ -340,13 +340,6 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The updated Kubernetes version",
 	}
-	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The Verrazzano resource to install on the managed cluster",
-		Default: &types.Default{
-			DefaultString: variables.DefaultVerrazzanoResource,
-		},
-	}
 	driverFlag.Options[driverconst.NodeOCPUs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional number of OCPUs for worker nodes",
