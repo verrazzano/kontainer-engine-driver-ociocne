@@ -340,6 +340,59 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The updated Kubernetes version",
 	}
+	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano resource to install on the managed cluster",
+		Default: &types.Default{
+			DefaultString: variables.DefaultVerrazzanoResource,
+		},
+	}
+	driverFlag.Options[driverconst.NodeOCPUs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Optional number of OCPUs for worker nodes",
+		Default: &types.Default{
+			DefaultInt: variables.DefaultOCICPUs,
+		},
+	}
+	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Optional number of OCPUs for control plane nodes",
+		Default: &types.Default{
+			DefaultInt: variables.DefaultOCICPUs,
+		},
+	}
+	driverFlag.Options[driverconst.NodeMemoryGbs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Optional amount of memory (in GBs) for worker nodes",
+		Default: &types.Default{
+			DefaultInt: variables.DefaultMemoryGbs,
+		},
+	}
+	driverFlag.Options[driverconst.ControlPlaneMemoryGbs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Optional amount of memory (in GBs) for control plane nodes",
+		Default: &types.Default{
+			DefaultInt: variables.DefaultMemoryGbs,
+		},
+	}
+	driverFlag.Options[driverconst.NodeVolumeGbs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Volume size of worker nodes in Gbs",
+		Default: &types.Default{
+			DefaultInt: variables.DefaultVolumeGbs,
+		},
+	}
+	driverFlag.Options[driverconst.ControlPlaneVolumeGbs] = &types.Flag{
+		Type:  types.IntType,
+		Usage: "Volume size of control plane nodes in Gbs",
+		Default: &types.Default{
+			DefaultInt: variables.DefaultVolumeGbs,
+		},
+	}
+	driverFlag.Options[driverconst.NodePublicKeyContents] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The contents of the SSH public key to use for the nodes",
+	}
 	return &driverFlag, nil
 }
 
@@ -388,26 +441,12 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 		return info, err
 	}
 
-	isKubernetesUpgrade := state.IsKubernetesUpgrade(newState)
 	if err := state.SetUpdateValues(ctx, newState); err != nil {
 		return info, err
 	}
 	if err := storeVariables(info, state); err != nil {
 		return info, err
 	}
-	// the kubernetes version has changed, so we must upgrade the CAPI cluster's kubernetes version
-	if isKubernetesUpgrade {
-		d.Logger.Infof("upgrading kubernetes version for managed cluster %s to %s", state.Name, state.KubernetesVersion)
-		if err := d.SetVersion(ctx, info, &types.KubernetesVersion{Version: state.KubernetesVersion}); err != nil {
-			return info, fmt.Errorf("failed to upgrade kubernetes version for managed cluster %s: %v", state.Name, err)
-		}
-		d.Logger.Infof("completed kubernetes version upgrade for managed cluster %s", state.Name)
-		state.K8sUpgradeInProgress = false
-		if err := storeVariables(info, state); err != nil {
-			return info, err
-		}
-	}
-
 	di, err := k8s.InjectedDynamic()
 	if err != nil {
 		return info, err
@@ -416,13 +455,10 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 	if err != nil {
 		return info, err
 	}
-	if err := capi.CreateOrUpdateAllObjects(ctx, ki, di, state); err != nil {
-		return info, fmt.Errorf("failed to update cluster resources for %s: %v", state.Name, err)
-	}
-	if err := capi.WaitForCAPIClusterReady(ctx, di, state); err != nil {
-		return info, err
-	}
 
+	if err := capi.UpdateCluster(ctx, ki, di, state); err != nil {
+		return info, fmt.Errorf("failed to upgrade cluster: %v", err)
+	}
 	return info, nil
 }
 
@@ -547,11 +583,16 @@ func (d *OCIOCNEDriver) SetVersion(ctx context.Context, info *types.ClusterInfo,
 	if err != nil {
 		return err
 	}
+	ki, err := k8s.InjectedInterface()
+	if err != nil {
+		return err
+	}
 	di, err := k8s.InjectedDynamic()
 	if err != nil {
-		return fmt.Errorf("failed to create dynamic client for admin cluster %s: %v", state.Name, err)
+		return err
 	}
-	return capi.UpgradeClusterVersion(ctx, di, state)
+
+	return capi.UpdateCluster(ctx, ki, di, state)
 }
 
 func (d *OCIOCNEDriver) GetCapabilities(_ context.Context) (*types.Capabilities, error) {

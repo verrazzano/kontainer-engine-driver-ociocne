@@ -5,6 +5,9 @@ package variables
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base32"
+	"encoding/json"
 	"fmt"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/rancher/kontainer-engine/drivers/options"
@@ -18,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"net"
-	"regexp"
 	"strings"
 )
 
@@ -70,6 +72,7 @@ type (
 		Name        string
 		DisplayName string
 		Namespace   string
+		Hash        string
 
 		ImageID                 string
 		ImageDisplayName        string
@@ -84,8 +87,6 @@ type (
 		NodeShape               string
 		ControlPlaneShape       string
 		KubernetesVersion       string
-		SanitizedK8sVersion     string
-		K8sUpgradeInProgress    bool
 		NodeOCPUs               int64
 		ControlPlaneOCPUs       int64
 		NodeMemoryGbs           int64
@@ -193,7 +194,6 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		CAPIOCINamespace: CAPIOCINamespace,
 	}
 	v.Namespace = v.Name
-	v.SanitizedK8sVersion = sanitizeK8sVersion(v.KubernetesVersion)
 
 	if err := v.SetVersionMapping(); err != nil {
 		return v, err
@@ -205,27 +205,33 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	return v, nil
 }
 
-func (v *Variables) IsKubernetesUpgrade(vNew *Variables) bool {
-	if v.K8sUpgradeInProgress {
-		return true
-	}
-	return v.KubernetesVersion != vNew.KubernetesVersion
-}
-
 func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error {
 	v.KubernetesVersion = vNew.KubernetesVersion
-	v.SanitizedK8sVersion = sanitizeK8sVersion(vNew.KubernetesVersion)
 	if err := v.SetVersionMapping(); err != nil {
 		return err
 	}
 	v.NodeReplicas = vNew.NodeReplicas
 	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
+	v.ImageDisplayName = vNew.ImageDisplayName
+	v.VerrazzanoResource = vNew.VerrazzanoResource
+	v.NodeOCPUs = vNew.NodeOCPUs
+	v.ControlPlaneOCPUs = vNew.ControlPlaneOCPUs
+	v.NodeMemoryGbs = vNew.NodeMemoryGbs
+	v.ControlPlaneMemoryGbs = vNew.ControlPlaneMemoryGbs
+	v.NodeVolumeGbs = vNew.NodeVolumeGbs
+	v.ControlPlaneVolumeGbs = vNew.ControlPlaneVolumeGbs
+	v.SSHPublicKey = vNew.SSHPublicKey
 	v.DisplayName = vNew.DisplayName
 	return v.SetDynamicValues(ctx)
 }
 
 // SetDynamicValues sets dynamic values from OCI in the Variables
 func (v *Variables) SetDynamicValues(ctx context.Context) error {
+	hash, err := v.HashSum()
+	if err != nil {
+		return err
+	}
+	v.Hash = hash
 	client, err := k8s.InjectedInterface()
 	if err != nil {
 		return err
@@ -300,6 +306,20 @@ func (v *Variables) SetVersionMapping() error {
 // Validate asserts values are acceptable for cluster lifecycle operations
 func (v *Variables) Validate() error {
 	return nil
+}
+
+func (v *Variables) HashSum() (string, error) {
+	vCopy := v
+	vCopy.Hash = ""
+	bytes, err := json.Marshal(vCopy)
+	if err != nil {
+		return "", err
+	}
+	sha := sha256.New()
+	sha.Write(bytes)
+
+	encoded := base32.StdEncoding.EncodeToString(sha.Sum(nil))
+	return strings.ToLower(encoded[0:5]), nil
 }
 
 func (v *Variables) setImageId(ctx context.Context, client oci.Client) error {
@@ -399,10 +419,4 @@ func (v *Variables) cloudCredentialNameAndNamespace() (string, string) {
 		return "cattle-global-data", split[0]
 	}
 	return split[1], split[0]
-}
-
-var allNonAlphaNumeric = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
-
-func sanitizeK8sVersion(version string) string {
-	return allNonAlphaNumeric.ReplaceAllString(version, "-")
 }

@@ -11,6 +11,22 @@ import (
 )
 
 func CreateObjects(v *variables.Variables) []Object {
+	return objectList(v, include{
+		workers:      true,
+		controlplane: true,
+		capi:         true,
+	})
+}
+
+func UpdateObjects(v *variables.Variables) []Object {
+	return objectList(v, include{
+		workers:      false,
+		controlplane: false,
+		capi:         true,
+	})
+}
+
+func objectList(v *variables.Variables, i include) []Object {
 	var res []Object
 
 	// Create addons if they are enabled
@@ -26,9 +42,15 @@ func CreateObjects(v *variables.Variables) []Object {
 	if v.InstallVerrazzano {
 		res = append(res, vpo...)
 	}
-	res = append(res, capi...)
-	res = append(res, ControlPlane...)
-	res = append(res, Workers...)
+	if i.capi {
+		res = append(res, capi...)
+	}
+	if i.controlplane {
+		res = append(res, ControlPlane...)
+	}
+	if i.workers {
+		res = append(res, Workers...)
+	}
 	return res
 }
 
@@ -36,6 +58,12 @@ type Object struct {
 	GVR          schema.GroupVersionResource
 	Text         string
 	LockedFields map[string]bool
+}
+
+type include struct {
+	workers      bool
+	controlplane bool
+	capi         bool
 }
 
 var vpo = []Object{
