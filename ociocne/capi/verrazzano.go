@@ -26,11 +26,11 @@ const (
 	verrazzanoPlatformOperator = "verrazzano-platform-operator"
 )
 
-func InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, di, adminDi dynamic.Interface, v *variables.Variables) error {
+func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, di, adminDi dynamic.Interface, v *variables.Variables) error {
 	if !v.InstallVerrazzano || v.VerrazzanoResource == "" {
 		return nil
 	}
-	if err := waitForVerrazzanoPlatformOperator(ctx, ki); err != nil {
+	if err := c.waitForVerrazzanoPlatformOperator(ctx, ki); err != nil {
 		return err
 	}
 
@@ -52,10 +52,10 @@ func InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, 
 	return nil
 }
 
-func waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
-	endTime := time.Now().Add(verrazzanoReadyTimeout)
+func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
+	endTime := time.Now().Add(c.verrazzanoTimeout)
 	for {
-		time.Sleep(verrazzanoPollingInterval)
+		time.Sleep(c.verrazzanoPollingInterval)
 		vpoDeployment, err := ki.AppsV1().Deployments(verrazzanoInstallNamespace).Get(ctx, verrazzanoPlatformOperator, metav1.GetOptions{})
 		if err != nil {
 			return err

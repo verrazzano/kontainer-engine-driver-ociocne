@@ -106,8 +106,10 @@ var Workers = []Object{
 }
 
 var capi = []Object{
-	{GVR: gvr.Cluster, Text: templates.Cluster},
+	CAPICluster,
 	{GVR: gvr.ClusterIdentity, Text: templates.ClusterIdentity},
 	{GVR: gvr.OCICluster, Text: templates.OCICluster},
 	{GVR: gvr.OCNEConfigTemplate, Text: templates.OCNEConfigTemplate},
 }
+
+var CAPICluster = Object{GVR: gvr.Cluster, Text: templates.Cluster}

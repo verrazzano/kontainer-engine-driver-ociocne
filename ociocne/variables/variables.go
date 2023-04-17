@@ -130,7 +130,8 @@ type (
 		User                 string
 
 		// Parsed subnets
-		Subnets []Subnet `json:"subnets,omitempty"`
+		Subnets         []Subnet                   `json:"subnets,omitempty"`
+		OCIClientGetter func() (oci.Client, error) `json:"-"`
 	}
 )
 
@@ -194,6 +195,9 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		CAPIOCINamespace: CAPIOCINamespace,
 	}
 	v.Namespace = v.Name
+	v.OCIClientGetter = func() (oci.Client, error) {
+		return oci.NewClient(v.GetConfigurationProvider())
+	}
 
 	if err := v.SetVersionMapping(); err != nil {
 		return v, err
@@ -238,7 +242,8 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	if err := SetupOCIAuth(ctx, client, v); err != nil {
 		return err
 	}
-	ociClient, err := oci.NewClient(v.GetConfigurationProvider())
+
+	ociClient, err := v.OCIClientGetter()
 	if err != nil {
 		return err
 	}

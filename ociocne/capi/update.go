@@ -17,7 +17,7 @@ import (
 // 2. update the control plane, and then wait for the control plane to be ready
 // 3. update the worker nodes, and then wait for the worker nodes to be ready
 // 4. update the remaining cluster resources, and then wait for the cluster to be ready
-func UpdateCluster(ctx context.Context, ki kubernetes.Interface, di dynamic.Interface, v *variables.Variables) error {
+func (c *CAPIClient) UpdateCluster(ctx context.Context, ki kubernetes.Interface, di dynamic.Interface, v *variables.Variables) error {
 	// update the CAPI credentials if necessary
 	if err := createOrUpdateCAPISecret(ctx, v, ki); err != nil {
 		return fmt.Errorf("failed to create CAPI credentials: %v", err)
@@ -27,7 +27,7 @@ func UpdateCluster(ctx context.Context, ki kubernetes.Interface, di dynamic.Inte
 	if err := createOrUpdateObjects(ctx, di, object.ControlPlane, v); err != nil {
 		return fmt.Errorf("error updating control plane: %v", err)
 	}
-	if err := WaitForCAPIClusterReady(ctx, di, v); err != nil {
+	if err := c.WaitForCAPIClusterReady(ctx, di, v); err != nil {
 		return err
 	}
 
@@ -35,7 +35,7 @@ func UpdateCluster(ctx context.Context, ki kubernetes.Interface, di dynamic.Inte
 	if err := createOrUpdateObjects(ctx, di, object.Workers, v); err != nil {
 		return fmt.Errorf("error updating workers: %v", err)
 	}
-	if err := WaitForCAPIClusterReady(ctx, di, v); err != nil {
+	if err := c.WaitForCAPIClusterReady(ctx, di, v); err != nil {
 		return err
 	}
 
@@ -43,5 +43,5 @@ func UpdateCluster(ctx context.Context, ki kubernetes.Interface, di dynamic.Inte
 	if err := createOrUpdateObjects(ctx, di, object.UpdateObjects(v), v); err != nil {
 		return fmt.Errorf("error updating cluster resources: %v", err)
 	}
-	return WaitForCAPIClusterReady(ctx, di, v)
+	return c.WaitForCAPIClusterReady(ctx, di, v)
 }
