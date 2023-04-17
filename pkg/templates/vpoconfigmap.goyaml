@@ -1,3 +1,6 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7254,7 +7257,7 @@ data:
                 capabilities:
                   drop:
                     - ALL
-          affinity: 
+          affinity:
             podAntiAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
               - podAffinityTerm:
@@ -7322,7 +7325,7 @@ data:
             app.kubernetes.io/version: 1.5.2
         spec:
           terminationGracePeriodSeconds: 0
-          affinity: 
+          affinity:
             podAntiAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
               - podAffinityTerm:

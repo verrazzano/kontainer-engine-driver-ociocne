@@ -6,8 +6,8 @@ package capi
 import (
 	"context"
 	"fmt"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi/object"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )

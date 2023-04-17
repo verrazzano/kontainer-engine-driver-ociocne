@@ -4,9 +4,9 @@
 package object
 
 import (
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

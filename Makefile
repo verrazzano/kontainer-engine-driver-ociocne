@@ -36,12 +36,34 @@ build:
 	mkdir -p ${DIST_DIR}
 	GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o ${DIST_DIR}/${BINARY_NAME}-linux .
 
+
+.PHONY: cr
+cr:
+	./scripts/write_cr.sh
+
 #
 # Tests-related tasks
 #
 .PHONY: unit-test
 unit-test: go-install
-	go test -v ./...
+	go test -v ./pkg/...
+
+.PHONY: lint
+lint:
+ifeq (, $(shell command -v golangci-lint))
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.49.0
+endif
+	golangci-lint run --skip-dirs=verrazzano
+
+.PHONY: copyright-check
+copyright-check: checkout-copyright-repo
+	go run ./verrazzano/tools/copyright --enforce-current .
+
+.PHONY: checkout-copyright-repo
+checkout-copyright-repo:
+	rm -rf verrazzano
+	git clone -n --depth=1 --filter=tree:0 https://github.com/verrazzano/verrazzano
+	cd verrazzano && git sparse-checkout set --no-cone tools/copyright && git checkout
 
 .PHONY: ci
-ci: unit-test build
+ci: | copyright-check lint unit-test build

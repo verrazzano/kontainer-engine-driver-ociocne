@@ -18,9 +18,8 @@ type Client interface {
 
 // ClientImpl OCI Client implementation
 type ClientImpl struct {
-	vnClient              core.VirtualNetworkClient
-	computeClient         core.ComputeClient
-	configurationProvider common.ConfigurationProvider
+	vnClient      core.VirtualNetworkClient
+	computeClient core.ComputeClient
 }
 
 // NewClient creates a new OCI Client

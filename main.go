@@ -6,13 +6,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/k8s"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/k8s"
 	"os"
 	"strconv"
 	"sync"
 
 	"github.com/rancher/kontainer-engine/types"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +31,7 @@ func main() {
 	k8s.MustSetKubeconfigFromEnv()
 	logger := MustGetLogger()
 	addr := make(chan string)
-	go types.NewServer(&ociocne.OCIOCNEDriver{
+	go types.NewServer(&pkg.OCIOCNEDriver{
 		Logger: logger,
 	}, addr).ServeOrDie(fmt.Sprintf("127.0.0.1:%v", port))
 
