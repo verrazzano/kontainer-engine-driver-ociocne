@@ -12,8 +12,6 @@ VERSION:=$(shell  date +%Y%m%d%H%M%S)
 DIST_DIR:=dist
 GO ?= go
 
-DRIVER_URL:=http://answanso-1.subnet1ad3phx.devweblogicphx.oraclevcn.com:8000/kontainer-engine-driver-ociocne-linux
-
 define CRBODY
 
 endef
