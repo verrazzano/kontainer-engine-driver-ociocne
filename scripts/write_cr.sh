@@ -4,12 +4,14 @@
 
 set -eu
 
-if [[ -z $DRIVER_URL ]]; then
+if [[ -z "$DRIVER_URL" ]]; then
   echo "Missing DRIVER_URL env variable"
   exit 1
 fi
-
-CHECKSUM=$(shasum -a 256 dist/kontainer-engine-driver-ociocne-linux |awk '{print $1}')
+if [[ -z "$CHECKSUM" ]]; then
+  echo "Missing CHECKSUM env variable"
+  exit 1
+fi
 
 echo "apiVersion: management.cattle.io/v3
 kind: KontainerDriver

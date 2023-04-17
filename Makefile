@@ -44,6 +44,7 @@ build:
 	mkdir -p ${DIST_DIR}
 	GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o ${DIST_DIR}/${BINARY_NAME}-linux .
 
+
 .PHONY: cr
 cr:
 	./scripts/write_cr.sh
