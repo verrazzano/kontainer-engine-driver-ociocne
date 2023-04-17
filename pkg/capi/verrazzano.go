@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi/object"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/gvr"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/templates"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -19,9 +19,6 @@ import (
 )
 
 const (
-	verrazzanoReadyTimeout    = 5 * time.Minute
-	verrazzanoPollingInterval = 10 * time.Second
-
 	verrazzanoInstallNamespace = "verrazzano-install"
 	verrazzanoPlatformOperator = "verrazzano-platform-operator"
 )

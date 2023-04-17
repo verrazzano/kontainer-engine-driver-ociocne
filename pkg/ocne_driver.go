@@ -1,17 +1,17 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package ociocne
+package pkg
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/rancher/kontainer-engine/types"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/capi"
-	driverconst "github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/constants"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/k8s"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/ociocne/variables"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi"
+	driverconst "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/constants"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/k8s"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
@@ -24,11 +24,6 @@ import (
 
 const (
 	metadataKey = "state"
-)
-
-const (
-	clusterTimeout         = 1 * time.Hour
-	clusterPollingInterval = 30 * time.Second
 )
 
 type OCIOCNEDriver struct {
@@ -733,9 +728,12 @@ func (d *OCIOCNEDriver) generateServiceAccountToken(ctx context.Context, clients
 
 func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
 	dynamicInterface, err := k8s.InjectedDynamic()
-	kubernetesInterface, err := k8s.InjectedInterface()
 	if err != nil {
 		return fmt.Errorf("failed to get dynamicInterface: %v", err)
+	}
+	kubernetesInterface, err := k8s.InjectedInterface()
+	if err != nil {
+		return fmt.Errorf("failed to get kubernetesInterface: %v", err)
 	}
 	err = capi.NewCAPIClient().CreateOrUpdateAllObjects(ctx, kubernetesInterface, dynamicInterface, state)
 	if err != nil {
