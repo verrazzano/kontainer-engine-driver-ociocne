@@ -4,18 +4,12 @@
 NAME:=kontainer-engine-driver-ociocne
 
 DRIVER_NAME:=kontainer-engine-driver-ociocne
-CR_YAML:=kontainerdriver.yaml
 
 # local build, use user and timestamp it
 BINARY_NAME ?= ${NAME}
 VERSION:=$(shell  date +%Y%m%d%H%M%S)
 DIST_DIR:=dist
 GO ?= go
-
-define CRBODY
-
-endef
-export CRBODY
 
 #
 # Go build related tasks
