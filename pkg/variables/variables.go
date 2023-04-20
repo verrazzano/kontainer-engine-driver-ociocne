@@ -5,8 +5,6 @@ package variables
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -82,10 +80,12 @@ var OCIClientGetter = func(v *Variables) (oci.Client, error) {
 type (
 	//Variables are parameters for cluster lifecycle operations
 	Variables struct {
-		Name        string
-		DisplayName string
-		Namespace   string
-		Hash        string
+		Name             string
+		DisplayName      string
+		Namespace        string
+		Hash             string
+		ControlPlaneHash string
+		NodePoolHash     string
 
 		VCNID              string
 		WorkerNodeSubnet   string
@@ -241,11 +241,7 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 		return err
 	}
 	v.NodePools = nodePools
-	hash, err := v.HashSum()
-	if err != nil {
-		return err
-	}
-	v.Hash = hash
+	v.SetHashes()
 	client, err := k8s.InjectedInterface()
 	if err != nil {
 		return err
@@ -339,20 +335,6 @@ func (v *Variables) ParseNodePools() ([]NodePool, error) {
 	}
 
 	return nodePools, nil
-}
-
-func (v *Variables) HashSum() (string, error) {
-	vCopy := v
-	vCopy.Hash = ""
-	bytes, err := json.Marshal(vCopy)
-	if err != nil {
-		return "", err
-	}
-	sha := sha256.New()
-	sha.Write(bytes)
-
-	encoded := base32.StdEncoding.EncodeToString(sha.Sum(nil))
-	return strings.ToLower(encoded[0:5]), nil
 }
 
 func (v *Variables) setImageId(ctx context.Context, client oci.Client) error {

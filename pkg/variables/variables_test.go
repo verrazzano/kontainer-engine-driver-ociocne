@@ -47,14 +47,12 @@ func TestHashString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ha, err := tt.va.HashSum()
-			assert.NoError(t, err)
-			hb, err := tt.vb.HashSum()
-			assert.NoError(t, err)
+			tt.va.SetHashes()
+			tt.vb.SetHashes()
 			if tt.equal {
-				assert.Equal(t, ha, hb)
+				assert.Equal(t, tt.va.ControlPlaneHash, tt.vb.ControlPlaneHash)
 			} else {
-				assert.NotEqual(t, ha, hb)
+				assert.NotEqual(t, tt.va.ControlPlaneHash, tt.vb.ControlPlaneHash)
 			}
 		})
 	}

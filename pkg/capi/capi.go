@@ -208,7 +208,8 @@ func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *C
 
 	// Delete unused machinedeployments
 	for _, md := range mds.Items {
-		_, err := deleteIfContains(ctx, di, cruResult, gvr.MachineDeployment, &md)
+		// delete any machine deployments that were not in the CRU
+		_, err := deleteIfNotCRU(ctx, di, cruResult, gvr.MachineDeployment, &md)
 		if err != nil {
 			return err
 		}
@@ -223,8 +224,8 @@ func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *C
 	return nil
 }
 
-func deleteIfContains(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, gvr schema.GroupVersionResource, u *unstructured.Unstructured) (bool, error) {
-	if cruResult.Contains(gvr.Resource, u) {
+func deleteIfNotCRU(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, gvr schema.GroupVersionResource, u *unstructured.Unstructured) (bool, error) {
+	if !cruResult.Contains(gvr.Resource, u) {
 		return true, deleteUnstructureds(ctx, di, gvr, []unstructured.Unstructured{*u})
 	}
 	return false, nil
