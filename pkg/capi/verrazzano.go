@@ -32,7 +32,7 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	}
 
 	// Create the Verrazzano Resource if not exists
-	if err := cruObject(ctx, di, object.Object{
+	if _, err := cruObject(ctx, di, object.Object{
 		GVR:  gvr.Verrazzano,
 		Text: v.VerrazzanoResource,
 	}, v, false); err != nil {
@@ -40,7 +40,7 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	}
 
 	// Create the Verrazzano Managed Cluster Resource if not exists
-	if err := cruObject(ctx, adminDi, object.Object{
+	if _, err := cruObject(ctx, adminDi, object.Object{
 		GVR:  gvr.VerrazzanoManagedCluster,
 		Text: templates.VMC,
 	}, v, false); err != nil {

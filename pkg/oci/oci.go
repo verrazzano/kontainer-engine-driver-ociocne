@@ -57,10 +57,6 @@ func (c *ClientImpl) GetImageIdByName(ctx context.Context, displayName, compartm
 
 // GetSubnetById retrieves a subnet given that subnet's Id.
 func (c *ClientImpl) GetSubnetById(ctx context.Context, subnetId string) (*core.Subnet, error) {
-	if len(subnetId) == 0 {
-		return nil, nil
-	}
-
 	response, err := c.vnClient.GetSubnet(ctx, core.GetSubnetRequest{
 		SubnetId:        &subnetId,
 		RequestMetadata: common.RequestMetadata{},

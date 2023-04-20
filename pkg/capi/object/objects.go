@@ -4,11 +4,29 @@
 package object
 
 import (
+	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+func NestedField(o interface{}, fields ...string) (interface{}, error) {
+	if len(fields) < 1 {
+		return o, nil
+	}
+	field, remainingFields := fields[0], fields[1:]
+
+	oMap, isMap := o.(map[string]interface{})
+	if !isMap {
+		return nil, fmt.Errorf("%v is not a map", o)
+	}
+	oNew, ok := oMap[field]
+	if !ok {
+		return nil, fmt.Errorf("field %s not found", field)
+	}
+	return NestedField(oNew, remainingFields...)
+}
 
 func CreateObjects(v *variables.Variables) []Object {
 	return objectList(v, include{

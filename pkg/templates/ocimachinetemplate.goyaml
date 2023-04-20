@@ -1,27 +1,38 @@
 # Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OCIMachineTemplate
-metadata:
-  name:  {{.Name}}-{{.Hash}}-md-0
-  namespace: {{.Namespace}}
-spec:
-  template:
+apiVersion: v1
+kind: List
+{{- if .NodePools}}
+items:
+  {{- range .NodePools }}
+  - apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OCIMachineTemplate
+    metadata:
+      name:  {{.Name}}-{{$.Hash}}
+      namespace: {{$.Namespace}}
+      labels:
+        verrazzano.io/node-pool: {{.Name}}
     spec:
-      bootVolumeSizeInGBs: "{{.NodeVolumeGbs}}"
-      compartmentId:  {{.CompartmentID}}
-      imageId:  {{.ImageID}}
-      isPvEncryptionInTransitEnabled: {{.NodePVTransitEncryption}}
-      metadata:
-        ssh_authorized_keys: {{.SSHPublicKey}}
-      shape: {{.NodeShape}}
-      {{- if or .NodeOCPUs .NodeMemoryGbs }}
-      shapeConfig:
-        {{- if .NodeOCPUs }}
-        ocpus: "{{.NodeOCPUs}}"
-        {{- end }}
-        {{- if .NodeMemoryGbs }}
-        memoryInGBs: "{{.NodeMemoryGbs}}"
-        {{- end }}
-      {{- end }}
+      template:
+        spec:
+          bootVolumeSizeInGBs: "{{.VolumeSize}}"
+          compartmentId:  {{$.CompartmentID}}
+          imageId:  {{$.ImageID}}
+          isPvEncryptionInTransitEnabled: {{$.NodePVTransitEncryption}}
+          metadata:
+            ssh_authorized_keys: {{$.SSHPublicKey}}
+          shape: {{.Shape}}
+          {{- if contains .Shape "Flex" }}
+          shapeConfig:
+            {{- if .Ocpus }}
+            ocpus: "{{.Ocpus}}"
+            {{- end }}
+            {{- if .Memory }}
+            memoryInGBs: "{{.Memory}}"
+            {{- end }}
+          {{- end }}
+  {{- end }}
+{{- else }}
+items: []
+{{- end }}

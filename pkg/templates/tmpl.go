@@ -20,14 +20,14 @@ var OCNEControlPlane string
 //go:embed ocicontrolplanemachinetemplate.goyaml
 var OCIControlPlaneMachineTemplate string
 
-//go:embed ocimachinetemplate.goyaml
-var OCIMachineTemplate string
-
 //go:embed ocneconfig.goyaml
 var OCNEConfigTemplate string
 
 //go:embed machinedeployment.goyaml
 var MachineDeployment string
+
+//go:embed ocimachinetemplate.goyaml
+var OCIMachineTemplate string
 
 //go:embed calicoresourceset-customresource.goyaml
 var CalicoResourceSet string

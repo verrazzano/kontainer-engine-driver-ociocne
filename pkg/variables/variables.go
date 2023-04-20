@@ -66,6 +66,19 @@ type Subnet struct {
 	Type string
 }
 
+type NodePool struct {
+	Name       string `json:"name"`
+	Replicas   int64  `json:"replicas"`
+	Memory     int64  `json:"memory"`
+	Ocpus      int64  `json:"ocpus"`
+	VolumeSize int64  `json:"volumeSize"`
+	Shape      string `json:"shape"`
+}
+
+var OCIClientGetter = func(v *Variables) (oci.Client, error) {
+	return oci.NewClient(v.GetConfigurationProvider())
+}
+
 type (
 	//Variables are parameters for cluster lifecycle operations
 	Variables struct {
@@ -74,52 +87,56 @@ type (
 		Namespace   string
 		Hash        string
 
-		ImageID                 string
-		ImageDisplayName        string
-		VCNID                   string
-		WorkerNodeSubnet        string
-		ControlPlaneSubnet      string
-		LoadBalancerSubnet      string
-		SSHPublicKey            string
-		ControlPlaneReplicas    int64
-		NodeReplicas            int64
-		NodePVTransitEncryption bool
-		NodeShape               string
-		ControlPlaneShape       string
+		VCNID              string
+		WorkerNodeSubnet   string
+		ControlPlaneSubnet string
+		LoadBalancerSubnet string
+		// Parsed subnets
+		Subnets       []Subnet `json:"subnets,omitempty"`
+		PodCIDR       string
+		ClusterCIDR   string
+		ProxyEndpoint string
+
+		// Cluster topology and configuration
 		KubernetesVersion       string
-		NodeOCPUs               int64
+		SSHPublicKey            string
+		ControlPlaneShape       string
+		ControlPlaneReplicas    int64
 		ControlPlaneOCPUs       int64
-		NodeMemoryGbs           int64
-		NodeVolumeGbs           int64
 		ControlPlaneMemoryGbs   int64
 		ControlPlaneVolumeGbs   int64
-		PodCIDR                 string
-		ClusterCIDR             string
-		ProxyEndpoint           string
-		PreOCNECommands         []string
-		PostOCNECommands        []string
-		ControlPlaneRegistry    string
-		CalicoRegistry          string
-		CalicoImagePath         string
-		TigeraTag               string
-		ETCDImageTag            string
-		CoreDNSImageTag         string
-		CCMImage                string
-		CSIRegistry             string
-		OCICSIImage             string
-		ProviderId              string
+		NodePVTransitEncryption bool
+		RawNodePools            []string
+		// Parsed node pools
+		NodePools []NodePool
 
-		InstallVerrazzano  bool
-		VerrazzanoResource string
-		VerrazzanoImage    string
+		// ImageID is looked up by display name
+		ImageDisplayName string
+		ImageID          string
 
-		InstallCalico bool
-		InstallCCM    bool
-		InstallCSI    bool
+		PreOCNECommands  []string
+		PostOCNECommands []string
 
-		CAPIOCINamespace   string
-		CAPICredentialName string
+		// Addons, images, and registries
+		InstallVerrazzano    bool
+		VerrazzanoResource   string
+		VerrazzanoImage      string
+		InstallCalico        bool
+		InstallCCM           bool
+		InstallCSI           bool
+		ControlPlaneRegistry string
+		CalicoRegistry       string
+		CalicoImagePath      string
+		TigeraTag            string
+		ETCDImageTag         string
+		CoreDNSImageTag      string
+		CCMImage             string
+		CSIRegistry          string
+		OCICSIImage          string
 
+		// OCI Credentials
+		CAPIOCINamespace     string
+		CAPICredentialName   string
 		CloudCredentialId    string
 		CompartmentID        string
 		Fingerprint          string
@@ -129,9 +146,8 @@ type (
 		Tenancy              string
 		User                 string
 
-		// Parsed subnets
-		Subnets         []Subnet                   `json:"subnets,omitempty"`
-		OCIClientGetter func() (oci.Client, error) `json:"-"`
+		// Supplied for templating
+		ProviderId string
 	}
 )
 
@@ -164,11 +180,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		ControlPlaneOCPUs:       options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneOCPUs, "controlPlaneOcpus").(int64),
 		ControlPlaneMemoryGbs:   options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneMemoryGbs, "controlPlaneMemoryGbs").(int64),
 		ControlPlaneVolumeGbs:   options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneVolumeGbs, "controlPlaneVolumeGbs").(int64),
-		NodeReplicas:            options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NumWorkerNodes, "numWorkerNodes").(int64),
-		NodeShape:               options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodeShape, "nodeShape").(string),
-		NodeOCPUs:               options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeOCPUs, "nodeOcpus").(int64),
-		NodeMemoryGbs:           options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeMemoryGbs, "nodeMemoryGbs").(int64),
-		NodeVolumeGbs:           options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.NodeVolumeGbs, "nodeVolumeGbs").(int64),
+		RawNodePools:            options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.RawNodePools, "nodePools").(*types.StringSlice).Value,
 
 		// Image settings
 		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
@@ -195,9 +207,6 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		CAPIOCINamespace: CAPIOCINamespace,
 	}
 	v.Namespace = v.Name
-	v.OCIClientGetter = func() (oci.Client, error) {
-		return oci.NewClient(v.GetConfigurationProvider())
-	}
 
 	if err := v.SetVersionMapping(); err != nil {
 		return v, err
@@ -214,15 +223,12 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	if err := v.SetVersionMapping(); err != nil {
 		return err
 	}
-	v.NodeReplicas = vNew.NodeReplicas
 	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
 	v.ImageDisplayName = vNew.ImageDisplayName
-	v.NodeOCPUs = vNew.NodeOCPUs
 	v.ControlPlaneOCPUs = vNew.ControlPlaneOCPUs
-	v.NodeMemoryGbs = vNew.NodeMemoryGbs
 	v.ControlPlaneMemoryGbs = vNew.ControlPlaneMemoryGbs
-	v.NodeVolumeGbs = vNew.NodeVolumeGbs
 	v.ControlPlaneVolumeGbs = vNew.ControlPlaneVolumeGbs
+	v.RawNodePools = vNew.RawNodePools
 	v.SSHPublicKey = vNew.SSHPublicKey
 	v.DisplayName = vNew.DisplayName
 	return v.SetDynamicValues(ctx)
@@ -230,6 +236,11 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 
 // SetDynamicValues sets dynamic values from OCI in the Variables
 func (v *Variables) SetDynamicValues(ctx context.Context) error {
+	nodePools, err := v.ParseNodePools()
+	if err != nil {
+		return err
+	}
+	v.NodePools = nodePools
 	hash, err := v.HashSum()
 	if err != nil {
 		return err
@@ -243,7 +254,7 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 		return err
 	}
 
-	ociClient, err := v.OCIClientGetter()
+	ociClient, err := OCIClientGetter(v)
 	if err != nil {
 		return err
 	}
@@ -283,10 +294,19 @@ func (v *Variables) GetCAPIClusterKubeConfig(ctx context.Context, state *Variabl
 }
 
 // NodeCount is the sum of worker and control plane nodes
-func (v *Variables) NodeCount() *types.NodeCount {
-	return &types.NodeCount{
-		Count: v.NodeReplicas + v.ControlPlaneReplicas,
+func (v *Variables) NodeCount() (*types.NodeCount, error) {
+	nps, err := v.ParseNodePools()
+	if err != nil {
+		return nil, err
 	}
+
+	count := v.ControlPlaneReplicas
+	for _, np := range nps {
+		count = count + np.Replicas
+	}
+	return &types.NodeCount{
+		Count: count,
+	}, nil
 }
 
 // Version is the cluster Kubernetes version
@@ -307,9 +327,18 @@ func (v *Variables) SetVersionMapping() error {
 	return nil
 }
 
-// Validate asserts values are acceptable for cluster lifecycle operations
-func (v *Variables) Validate() error {
-	return nil
+func (v *Variables) ParseNodePools() ([]NodePool, error) {
+	var nodePools []NodePool
+
+	for _, rawNodePool := range v.RawNodePools {
+		nodePool := NodePool{}
+		if err := json.Unmarshal([]byte(rawNodePool), &nodePool); err != nil {
+			return nil, err
+		}
+		nodePools = append(nodePools, nodePool)
+	}
+
+	return nodePools, nil
 }
 
 func (v *Variables) HashSum() (string, error) {
@@ -342,7 +371,7 @@ func (v *Variables) setSubnets(ctx context.Context, client oci.Client) error {
 	addSubnetForRole := func(subnetId, role string) error {
 		var err error
 		subnet := subnetCache[subnetId]
-		if subnet == nil {
+		if subnet == nil && subnetId != "" {
 			subnet, err = getSubnetById(ctx, client, subnetId, role)
 			if err != nil {
 				return err
@@ -373,10 +402,7 @@ func (v *Variables) setSubnets(ctx context.Context, client oci.Client) error {
 func getSubnetById(ctx context.Context, client oci.Client, subnetId, role string) (*Subnet, error) {
 	sn, err := client.GetSubnetById(ctx, subnetId)
 	if err != nil {
-		return nil, err
-	}
-	if sn == nil {
-		return nil, nil
+		return nil, fmt.Errorf("failed to get subnet %s", subnetId)
 	}
 
 	ip, _, err := net.ParseCIDR(*sn.CidrBlock)

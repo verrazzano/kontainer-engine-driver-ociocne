@@ -4,9 +4,7 @@
 package capi
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	gvr "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
@@ -16,13 +14,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apiyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"strings"
-	"text/template"
 	"time"
 )
 
@@ -58,15 +53,20 @@ func NewCAPIClient() *CAPIClient {
 	}
 }
 
-// CreateOrUpdateAllObjects creates or updates all cluster objects
-func (c *CAPIClient) CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernetes.Interface, dynamicInterface dynamic.Interface, v *variables.Variables) error {
+func (c *CAPIClient) DeleteHangingResources(ctx context.Context, p dynamic.Interface, cruResult *CreateOrUpdateResult, namespace string) error {
+	return deleteWorkerObjects(ctx, p, cruResult, namespace)
+}
+
+// CreateOrUpdateAllObjects creates or updates all cluster result
+func (c *CAPIClient) CreateOrUpdateAllObjects(ctx context.Context, kubernetesInterface kubernetes.Interface, dynamicInterface dynamic.Interface, v *variables.Variables) (*CreateOrUpdateResult, error) {
 	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
-		return fmt.Errorf("failed to create CAPI credentials: %v", err)
+		return nil, fmt.Errorf("failed to create CAPI credentials: %v", err)
 	}
-	if err := createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v); err != nil {
-		return err
+	cruResult, err := createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
+	if err != nil {
+		return cruResult, err
 	}
-	return c.WaitForCAPIClusterReady(ctx, dynamicInterface, v)
+	return cruResult, c.WaitForCAPIClusterReady(ctx, dynamicInterface, v)
 }
 
 // createOrUpdateCAPISecret creates the CAPI secret if it does not already exist
@@ -105,177 +105,57 @@ func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, clien
 	return err
 }
 
-func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interface, objects []object.Object, v *variables.Variables) error {
+func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interface, objects []object.Object, v *variables.Variables) (*CreateOrUpdateResult, error) {
+	cruResult := NewCreateOrUpdateResult()
 	for _, o := range objects {
-		if err := createOrUpdateObject(ctx, dynamicInterface, o, v); err != nil {
-			return fmt.Errorf("failed to create Object %s/%s/%s: %v", o.GVR.Group, o.GVR.Version, o.GVR.Resource, err)
+		partialResult, err := createOrUpdateObject(ctx, dynamicInterface, o, v)
+		if err != nil {
+			return cruResult, fmt.Errorf("failed to create Object %s/%s/%s: %v", o.GVR.Group, o.GVR.Version, o.GVR.Resource, err)
 		}
+		cruResult.Merge(partialResult)
 	}
-	return nil
+	return cruResult, nil
 }
 
-func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables) error {
+func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables) (*CreateOrUpdateResult, error) {
 	return cruObject(ctx, client, o, v, true)
 }
 
-func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables, update bool) error {
+// cruObject create or update an object
+func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables, update bool) (*CreateOrUpdateResult, error) {
+	cruResult := NewCreateOrUpdateResult()
 	toCreateObject, err := loadTextTemplate(o, *v)
 	if err != nil {
-		return err
+		return cruResult, err
 	}
 
-	// Check if the Object already exists. Create it if it does not exist and return
-	existingObject, err := client.Resource(o.GVR).Namespace(toCreateObject.GetNamespace()).Get(ctx, toCreateObject.GetName(), metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return createIfNotExists(ctx, client, o.GVR, toCreateObject)
-		}
-	}
-
-	if update {
-		// If the Object exists, merge toCreateObject with existingObject, and do an update
-		mergedObject := mergeUnstructured(existingObject, toCreateObject, o.LockedFields)
+	for _, u := range toCreateObject {
+		// Try to fetch existing object
+		existingObject, err := client.Resource(o.GVR).Namespace(u.GetNamespace()).Get(ctx, u.GetName(), metav1.GetOptions{})
 		if err != nil {
-			return err
-		}
-		_, err = client.Resource(o.GVR).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
-		return err
-	}
-	return nil
-}
-
-// DeleteCluster deletes the cluster
-func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	deleteFromTmpl := func(o object.Object) error {
-		u, err := loadTextTemplate(o, *v)
-		if err != nil {
-			return err
-		}
-		return deleteBytes(ctx, client, o.GVR, u)
-	}
-	return deleteFromTmpl(object.Object{
-		GVR:  gvr.Cluster,
-		Text: templates.Cluster,
-	})
-}
-
-func deleteBytes(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, u *unstructured.Unstructured) error {
-	err := client.Resource(gvr).Namespace(u.GetNamespace()).Delete(ctx, u.GetName(), metav1.DeleteOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-	return err
-}
-
-// WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status, and its Machines
-func (c *CAPIClient) WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
-	endTime := time.Now().Add(c.capiTimeout)
-	for {
-		time.Sleep(c.capiPollingInterval)
-		cluster, err := client.Resource(gvr.Cluster).Namespace(state.Namespace).Get(ctx, state.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if isClusterReady(cluster) {
-			machinesReady, err := areMachinesReady(ctx, client, state)
+			// if object doesn't exist, try to create it
+			if apierrors.IsNotFound(err) {
+				if err := createIfNotExists(ctx, client, o.GVR, &u); err != nil {
+					return cruResult, err
+				}
+			} else {
+				return cruResult, err
+			}
+		} else if update { // If the Object exists, merge with existingObject and do an update
+			mergedObject := mergeUnstructured(existingObject, &u, o.LockedFields)
 			if err != nil {
-				return err
+				return cruResult, err
 			}
-			if machinesReady {
-				return nil
+			_, err = client.Resource(o.GVR).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
+			if err != nil {
+				return cruResult, err
 			}
 		}
-		if time.Now().After(endTime) {
-			return fmt.Errorf("timed out waiting for cluster %s to create", state.Name)
-		}
-	}
-}
 
-func isClusterReady(cluster *unstructured.Unstructured) bool {
-	clusterStatus := cluster.Object["status"].(map[string]interface{})
-	if clusterStatus == nil {
-		return false
-	}
-	controlPlaneReady, ok := clusterStatus["controlPlaneReady"]
-	if !ok {
-		return false
-	}
-	controlPlaneReadyBool, ok := controlPlaneReady.(bool)
-	if !ok || !controlPlaneReadyBool {
-		return false
+		cruResult.Add(o.GVR.Resource, &u)
 	}
 
-	infrastructureReady, ok := clusterStatus["infrastructureReady"]
-	if !ok {
-		return false
-	}
-	infrastructureReadyBool, ok := infrastructureReady.(bool)
-	if !ok || !infrastructureReadyBool {
-		return false
-	}
-
-	phase, ok := clusterStatus["phase"]
-	if !ok {
-		return false
-	}
-	phaseString, ok := phase.(string)
-	if !ok || phaseString != clusterPhaseProvisioned {
-		return false
-	}
-	return true
-}
-
-func areMachinesReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) (bool, error) {
-	machineList, err := client.Resource(gvr.Machine).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"cluster.x-k8s.io/cluster-name": state.Name,
-			},
-		}),
-	})
-	if err != nil {
-		return false, err
-	}
-
-	if machineList == nil || len(machineList.Items) < 1 {
-		return false, nil
-	}
-
-	for _, machine := range machineList.Items {
-		status, ok := machine.Object["status"]
-		if !ok {
-			return false, nil
-		}
-		phase, ok := status.(map[string]interface{})["phase"]
-		if !ok {
-			return false, nil
-		}
-		phaseString, ok := phase.(string)
-		if !ok {
-			return false, nil
-		}
-		if phaseString != machinePhaseRunning {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func loadTextTemplate(o object.Object, variables variables.Variables) (*unstructured.Unstructured, error) {
-	t, err := template.New(o.GVR.Resource).Parse(o.Text)
-	if err != nil {
-		return nil, err
-	}
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, variables); err != nil {
-		return nil, err
-	}
-	templatedBytes := buf.Bytes()
-	u, err := toUnstructured(templatedBytes)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
+	return cruResult, nil
 }
 
 func createIfNotExists(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, u *unstructured.Unstructured) error {
@@ -286,18 +166,66 @@ func createIfNotExists(ctx context.Context, client dynamic.Interface, gvr schema
 	return err
 }
 
-func toUnstructured(o []byte) (*unstructured.Unstructured, error) {
-	j, err := apiyaml.ToJSON(o)
+// DeleteCluster deletes the cluster
+func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
+	deleteFromTmpl := func(o object.Object) error {
+		us, err := loadTextTemplate(o, *v)
+		if err != nil {
+			return err
+		}
+		return deleteUnstructureds(ctx, client, o.GVR, us)
+	}
+	return deleteFromTmpl(object.Object{
+		GVR:  gvr.Cluster,
+		Text: templates.Cluster,
+	})
+}
+
+func deleteUnstructureds(ctx context.Context, di dynamic.Interface, gvr schema.GroupVersionResource, us []unstructured.Unstructured) error {
+	for _, u := range us {
+		return deleteIfExists(ctx, di, gvr, u.GetName(), u.GetNamespace())
+	}
+	return nil
+}
+
+func deleteIfExists(ctx context.Context, di dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string) error {
+	err := di.Resource(gvr).Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, namespace string) error {
+	fieldSelector := fmt.Sprintf("metadata.namespace=%s", namespace)
+	// cleanup machine deployments
+	mds, err := di.Resource(gvr.MachineDeployment).List(ctx, metav1.ListOptions{
+		FieldSelector: fieldSelector,
+	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	obj, err := runtime.Decode(unstructured.UnstructuredJSONScheme, j)
-	if err != nil {
-		return nil, err
+
+	// Delete unused machinedeployments
+	for _, md := range mds.Items {
+		_, err := deleteIfContains(ctx, di, cruResult, gvr.MachineDeployment, &md)
+		if err != nil {
+			return err
+		}
+		// delete associated ocimachinetemplate if it exists
+		templateName, err := object.NestedField(md.Object, "spec", "template", "spec", "infrastructureRef", "name")
+		if ociMachineTemplate, ok := templateName.(string); ok && err == nil {
+			if err := deleteIfExists(ctx, di, gvr.OCIMachineTemplate, ociMachineTemplate, namespace); err != nil {
+				return err
+			}
+		}
 	}
-	u, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		return nil, errors.New("invalid unstructured Object")
+	return nil
+}
+
+func deleteIfContains(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, gvr schema.GroupVersionResource, u *unstructured.Unstructured) (bool, error) {
+	if cruResult.Contains(gvr.Resource, u) {
+		return true, deleteUnstructureds(ctx, di, gvr, []unstructured.Unstructured{*u})
 	}
-	return u, nil
+	return false, nil
 }
