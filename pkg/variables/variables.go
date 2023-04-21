@@ -48,7 +48,7 @@ spec:
 
 const (
 	kubeconfigName   = "%s-kubeconfig"
-	CAPIOCINamespace = "cluster-api-provider-oci-system"
+	CAPIOCINamespace = "verrazzano-capi"
 
 	loadBalancerSubnetRole         = "service-lb"
 	controlPlaneSubnetRole         = "control-plane"
