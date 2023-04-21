@@ -295,14 +295,22 @@ func (v *Variables) NodeCount() (*types.NodeCount, error) {
 	if err != nil {
 		return nil, err
 	}
+	v.NodePools = nps
+	return &types.NodeCount{
+		Count: v.ControlPlaneReplicas + v.workerNodeCount(),
+	}, nil
+}
 
-	count := v.ControlPlaneReplicas
-	for _, np := range nps {
+func (v *Variables) IsSingleNodeCluster() bool {
+	return v.workerNodeCount() == 0
+}
+
+func (v *Variables) workerNodeCount() int64 {
+	var count int64 = 0
+	for _, np := range v.NodePools {
 		count = count + np.Replicas
 	}
-	return &types.NodeCount{
-		Count: count,
-	}, nil
+	return count
 }
 
 // Version is the cluster Kubernetes version
