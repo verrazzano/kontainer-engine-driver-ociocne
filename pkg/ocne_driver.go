@@ -447,18 +447,24 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		return info, fmt.Errorf("error marshaling internalConfig: %v", err)
 	}
 
-	ki, err := k8s.NewInterfaceForKubeconfig(kubeConfigBytes)
+	managedKI, err := k8s.NewInterfaceForKubeconfig(kubeConfigBytes)
 	if err != nil {
 		return info, fmt.Errorf("failed to create clientset for managed cluster %s: %v", state.Name, err)
 	}
 
 	d.Logger.Infof("Creating service account token for cluster %v", state.Name)
-	info.ServiceAccountToken, err = d.generateServiceAccountToken(ctx, ki)
+	info.ServiceAccountToken, err = d.generateServiceAccountToken(ctx, managedKI)
 	if err != nil {
 		return info, fmt.Errorf("could not generate service account token: %v", err)
 	}
+	if state.IsSingleNodeCluster() {
+		d.Logger.Infof("Setting %s cluster to be a single-node cluster", state.Name)
+		if err := k8s.SetSingleNodeTaints(ctx, managedKI); err != nil {
+			return info, fmt.Errorf("failed to setup single node cluster: %v", err)
+		}
+	}
 
-	di, err := k8s.NewDynamicForKubeconfig(kubeConfigBytes)
+	managedDI, err := k8s.NewDynamicForKubeconfig(kubeConfigBytes)
 	if err != nil {
 		return info, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
 	}
@@ -468,7 +474,7 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 	}
 
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
-	if err := capi.NewCAPIClient().InstallAndRegisterVerrazzano(ctx, ki, di, adminDi, state); err != nil {
+	if err := capi.NewCAPIClient().InstallAndRegisterVerrazzano(ctx, managedKI, managedDI, adminDi, state); err != nil {
 		return info, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
 	}
 	d.Logger.Infof("+++ returning from PostCheck +++")
