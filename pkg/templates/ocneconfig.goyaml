@@ -1,7 +1,7 @@
 # Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha1
 kind: OCNEConfigTemplate
 metadata:
   name:  {{.Name}}-md-0
@@ -10,9 +10,10 @@ spec:
   template:
     spec:
 {{- if .ProxyEndpoint }}
-      proxy:
-       httpProxy: {{.ProxyEndpoint}}
-       httpsProxy: {{.ProxyEndpoint}}
+      imageConfiguration:
+        proxy:
+          httpProxy: {{.ProxyEndpoint}}
+          httpsProxy: {{.ProxyEndpoint}}
 {{- end }}
       joinConfiguration:
         nodeRegistration:

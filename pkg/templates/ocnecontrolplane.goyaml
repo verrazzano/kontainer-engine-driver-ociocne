@@ -1,7 +1,7 @@
 # Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
 kind: OCNEControlPlane
 metadata:
   name:  {{.Name}}-control-plane
@@ -17,9 +17,10 @@ spec:
   version: {{.KubernetesVersion}}
   controlPlaneConfig:
 {{- if .ProxyEndpoint }}
-    proxy:
-      httpProxy: {{.ProxyEndpoint}}
-      httpsProxy: {{.ProxyEndpoint}}
+    imageConfiguration:
+      proxy:
+        httpProxy: {{.ProxyEndpoint}}
+        httpsProxy: {{.ProxyEndpoint}}
 {{- end }}
     clusterConfiguration:
       apiServer:
