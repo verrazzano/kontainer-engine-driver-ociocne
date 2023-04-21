@@ -23,7 +23,7 @@ items:
         spec:
           bootstrap:
             configRef:
-              apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+              apiVersion: bootstrap.cluster.x-k8s.io/alpha1
               kind: OCNEConfigTemplate
               name: {{$.Name}}
           clusterName: {{$.Name}}
