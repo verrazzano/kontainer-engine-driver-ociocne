@@ -95,13 +95,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultString: variables.DefaultVMShape,
 		},
 	}
-	driverFlag.Options[driverconst.NodeShape] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The shape of the worker nodes",
-		Default: &types.Default{
-			DefaultString: variables.DefaultVMShape,
-		},
-	}
 	driverFlag.Options[driverconst.ProxyEndpoint] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The proxy endpoint to configure on control plane and worker nodes",
@@ -194,25 +187,11 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The Kubernetes version that will be used for your master and worker nodes e.g. v1.11.9, v1.12.7",
 	}
-	driverFlag.Options[driverconst.NodeOCPUs] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Optional number of OCPUs for worker nodes",
-		Default: &types.Default{
-			DefaultInt: variables.DefaultOCICPUs,
-		},
-	}
 	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional number of OCPUs for control plane nodes",
 		Default: &types.Default{
 			DefaultInt: variables.DefaultOCICPUs,
-		},
-	}
-	driverFlag.Options[driverconst.NodeMemoryGbs] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Optional amount of memory (in GBs) for worker nodes",
-		Default: &types.Default{
-			DefaultInt: variables.DefaultMemoryGbs,
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneMemoryGbs] = &types.Flag{
@@ -238,20 +217,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Usage: "Number of control plane nodes, default 1",
 		Default: &types.Default{
 			DefaultInt: 1,
-		},
-	}
-	driverFlag.Options[driverconst.NumWorkerNodes] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Number of worker nodes, default 1.",
-		Default: &types.Default{
-			DefaultInt: 1,
-		},
-	}
-	driverFlag.Options[driverconst.NodeVolumeGbs] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Volume size of worker nodes in Gbs",
-		Default: &types.Default{
-			DefaultInt: variables.DefaultVolumeGbs,
 		},
 	}
 	driverFlag.Options[driverconst.ImageDisplayName] = &types.Flag{
@@ -307,6 +272,13 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
 		},
 	}
+	driverFlag.Options[driverconst.RawNodePools] = &types.Flag{
+		Type:  types.StringSliceType,
+		Usage: "Cluster Node Pools",
+		Default: &types.Default{
+			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
+		},
+	}
 
 	return &driverFlag, nil
 }
@@ -317,13 +289,6 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 
 	driverFlag := types.DriverFlags{
 		Options: make(map[string]*types.Flag),
-	}
-	driverFlag.Options[driverconst.NumWorkerNodes] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Number of worker nodes, default 1.",
-		Default: &types.Default{
-			DefaultInt: 1,
-		},
 	}
 	driverFlag.Options[driverconst.NumControlPlaneNodes] = &types.Flag{
 		Type:  types.IntType,
@@ -340,13 +305,6 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The updated Kubernetes version",
 	}
-	driverFlag.Options[driverconst.NodeOCPUs] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Optional number of OCPUs for worker nodes",
-		Default: &types.Default{
-			DefaultInt: variables.DefaultOCICPUs,
-		},
-	}
 	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional number of OCPUs for control plane nodes",
@@ -354,25 +312,11 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 			DefaultInt: variables.DefaultOCICPUs,
 		},
 	}
-	driverFlag.Options[driverconst.NodeMemoryGbs] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Optional amount of memory (in GBs) for worker nodes",
-		Default: &types.Default{
-			DefaultInt: variables.DefaultMemoryGbs,
-		},
-	}
 	driverFlag.Options[driverconst.ControlPlaneMemoryGbs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional amount of memory (in GBs) for control plane nodes",
 		Default: &types.Default{
 			DefaultInt: variables.DefaultMemoryGbs,
-		},
-	}
-	driverFlag.Options[driverconst.NodeVolumeGbs] = &types.Flag{
-		Type:  types.IntType,
-		Usage: "Volume size of worker nodes in Gbs",
-		Default: &types.Default{
-			DefaultInt: variables.DefaultVolumeGbs,
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneVolumeGbs] = &types.Flag{
@@ -386,6 +330,13 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The contents of the SSH public key to use for the nodes",
 	}
+	driverFlag.Options[driverconst.RawNodePools] = &types.Flag{
+		Type:  types.StringSliceType,
+		Usage: "Cluster Node Pools",
+		Default: &types.Default{
+			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
+		},
+	}
 	return &driverFlag, nil
 }
 
@@ -398,9 +349,6 @@ func (d *OCIOCNEDriver) Create(ctx context.Context, opts *types.DriverOptions, _
 		return nil, err
 	}
 	if err != nil {
-		return nil, err
-	}
-	if err := state.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -467,12 +415,17 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		return info, err
 	}
 
+	nc, err := state.NodeCount()
+	if err != nil {
+		return info, err
+	}
+
 	info.Version = state.KubernetesVersion
 	info.Username = ""
 	info.Password = ""
 	info.ClientCertificate = ""
 	info.ClientKey = ""
-	info.NodeCount = state.NodeReplicas + state.ControlPlaneReplicas
+	info.NodeCount = nc.Count
 	info.Metadata["nodePool"] = state.Name + "-1"
 	if len(capiClusterKubeConfig.Clusters) > 0 {
 		cluster := capiClusterKubeConfig.Clusters[0].Cluster
@@ -527,7 +480,7 @@ func (d *OCIOCNEDriver) GetClusterSize(_ context.Context, info *types.ClusterInf
 	if err != nil {
 		return nil, err
 	}
-	return v.NodeCount(), nil
+	return v.NodeCount()
 }
 
 func (d *OCIOCNEDriver) GetVersion(_ context.Context, info *types.ClusterInfo) (*types.KubernetesVersion, error) {
@@ -545,7 +498,9 @@ func (d *OCIOCNEDriver) SetClusterSize(ctx context.Context, info *types.ClusterI
 		return err
 	}
 
-	state.NodeReplicas = count.Count
+	if len(state.NodePools) > 0 {
+		state.NodePools[0].Replicas = count.Count
+	}
 	if err := storeVariables(info, state); err != nil {
 		d.Logger.Errorf("Failed to save new node group size: %v", err)
 		return err
@@ -735,7 +690,7 @@ func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
 	if err != nil {
 		return fmt.Errorf("failed to get kubernetesInterface: %v", err)
 	}
-	err = capi.NewCAPIClient().CreateOrUpdateAllObjects(ctx, kubernetesInterface, dynamicInterface, state)
+	_, err = capi.NewCAPIClient().CreateOrUpdateAllObjects(ctx, kubernetesInterface, dynamicInterface, state)
 	if err != nil {
 		return fmt.Errorf("failed to create objects: %v", err)
 	}

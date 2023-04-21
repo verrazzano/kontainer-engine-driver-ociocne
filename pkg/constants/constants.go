@@ -19,11 +19,7 @@ const (
 	ClusterCIDR         = "cluster-cidr"
 	ImageDisplayName    = "image-display-name"
 
-	NumWorkerNodes = "num-worker-nodes"
-	NodeShape      = "node-shape"
-	NodeOCPUs      = "node-ocpus"
-	NodeMemoryGbs  = "node-memory-gbs"
-	NodeVolumeGbs  = "node-volume-gbs"
+	RawNodePools = "node-pools"
 
 	ControlPlaneOCPUs     = "control-plane-ocpus"
 	NumControlPlaneNodes  = "num-control-plane-nodes"

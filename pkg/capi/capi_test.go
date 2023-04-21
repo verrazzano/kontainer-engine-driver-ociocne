@@ -8,8 +8,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/oci"
-	ocifake "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/oci/fake"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,10 +57,6 @@ var (
 		InstallCalico:     true,
 		InstallCCM:        true,
 		InstallVerrazzano: true,
-
-		OCIClientGetter: func() (oci.Client, error) {
-			return &ocifake.Client{}, nil
-		},
 	}
 )
 
@@ -77,13 +72,14 @@ func TestNewCAPIClient(t *testing.T) {
 func TestCreateOrUpdateAllObjects(t *testing.T) {
 	ki := fake.NewSimpleClientset()
 	di := createTestDIWithClusterAndMachine()
-	err := testCAPIClient.CreateOrUpdateAllObjects(context.TODO(), ki, di, testVariables)
+	_, err := testCAPIClient.CreateOrUpdateAllObjects(context.TODO(), ki, di, testVariables)
 	assert.NoError(t, err)
 }
 
 func TestRenderObjects(t *testing.T) {
 	v := variables.Variables{
 		Name:                    "xyz",
+		Namespace:               "xyz",
 		CompartmentID:           "ocid1.compartment.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		ImageID:                 "ocid1.image.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		VCNID:                   "ocid1.vcn.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -92,18 +88,14 @@ func TestRenderObjects(t *testing.T) {
 		LoadBalancerSubnet:      "ocid1.subnet.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 		SSHPublicKey:            "ssh-rsa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa foo@foo-mac",
 		ControlPlaneReplicas:    1,
-		NodeReplicas:            1,
 		NodePVTransitEncryption: true,
-		NodeShape:               "VM.Standard.E4.Flex",
 		ControlPlaneShape:       "VM.Standard.E4.Flex",
 		KubernetesVersion:       "v1.24.8",
 		TigeraTag:               variables.DefaultTigeraTag,
 		CalicoRegistry:          variables.DefaultRegistry,
 		CalicoImagePath:         variables.DefaultCNEPath,
 		CCMImage:                variables.DefaultCCMImage,
-		NodeOCPUs:               1,
 		ControlPlaneOCPUs:       1,
-		NodeMemoryGbs:           16,
 		ControlPlaneMemoryGbs:   16,
 		PodCIDR:                 "192.168.0.0/16",
 		ClusterCIDR:             "10.0.0.0/12",
@@ -113,7 +105,27 @@ func TestRenderObjects(t *testing.T) {
 		Region:                  "xyz",
 		Tenancy:                 "xyz",
 		User:                    "xyz",
+		Hash:                    "xyz",
 		ProviderId:              variables.ProviderId,
+
+		NodePools: []variables.NodePool{
+			{
+				Name:       "np-1",
+				Replicas:   1,
+				Memory:     32,
+				Ocpus:      4,
+				VolumeSize: 100,
+				Shape:      "VM.E4.Standard.Flex",
+			},
+			{
+				Name:       "np-2",
+				Replicas:   2,
+				Memory:     64,
+				Ocpus:      8,
+				VolumeSize: 250,
+				Shape:      "xyz",
+			},
+		},
 
 		InstallVerrazzano: true,
 		InstallCSI:        true,
@@ -121,7 +133,8 @@ func TestRenderObjects(t *testing.T) {
 		InstallCalico:     true,
 	}
 
-	for _, o := range object.CreateObjects(&v) {
+	os := object.CreateObjects(&v)
+	for _, o := range os {
 		u, err := loadTextTemplate(o, v)
 		assert.NoError(t, err)
 		assert.NotNil(t, u)
@@ -218,11 +231,11 @@ func createTestMachine(v *variables.Variables, phase string) *unstructured.Unstr
 	if err != nil {
 		panic(err)
 	}
-	machine.Object["status"] = map[string]interface{}{
+	machine[0].Object["status"] = map[string]interface{}{
 		"phase": phase,
 	}
-	machine.Object["metadata"].(map[string]interface{})["name"] = fmt.Sprintf("m-%d", rand.Intn(10000))
-	return machine
+	machine[0].Object["metadata"].(map[string]interface{})["name"] = fmt.Sprintf("m-%d", rand.Intn(10000))
+	return &machine[0]
 }
 
 func createTestCluster(v *variables.Variables, cReady, iReady bool, phase string) *unstructured.Unstructured {
@@ -230,12 +243,12 @@ func createTestCluster(v *variables.Variables, cReady, iReady bool, phase string
 	if err != nil {
 		panic(err)
 	}
-	cluster.Object["status"] = map[string]interface{}{
+	cluster[0].Object["status"] = map[string]interface{}{
 		"controlPlaneReady":   cReady,
 		"infrastructureReady": iReady,
 		"phase":               phase,
 	}
-	return cluster
+	return &cluster[0]
 }
 
 func createTestDIWithClusterAndMachine() dynamic.Interface {
@@ -243,6 +256,11 @@ func createTestDIWithClusterAndMachine() dynamic.Interface {
 	machine := createTestMachine(testVariables, machinePhaseRunning)
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypeWithName(listGVK(machine), &unstructured.UnstructuredList{})
+	scheme.AddKnownTypeWithName(schema.GroupVersionKind{
+		Group:   gvr.MachineDeployment.Group,
+		Version: gvr.MachineDeployment.Version,
+		Kind:    "MachineDeploymentList",
+	}, &unstructured.UnstructuredList{})
 	di := fake2.NewSimpleDynamicClient(scheme, cluster, machine)
 	return di
 }

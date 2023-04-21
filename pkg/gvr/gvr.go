@@ -12,6 +12,7 @@ const (
 	InfrastructureXK8sIO = "infrastructure.cluster.x-k8s.io"
 	ClusterXK8sIO        = "cluster.x-k8s.io"
 	V1Beta1Version       = "v1beta1"
+	V1Alpha1Version      = "v1alpha1"
 )
 
 var MachineDeployment = schema.GroupVersionResource{
@@ -46,7 +47,7 @@ var Machine = schema.GroupVersionResource{
 
 var OCNEControlPlane = schema.GroupVersionResource{
 	Group:    ControlPlaneXK8sIO,
-	Version:  V1Beta1Version,
+	Version:  V1Alpha1Version,
 	Resource: "ocnecontrolplanes",
 }
 
@@ -58,7 +59,7 @@ var OCIMachineTemplate = schema.GroupVersionResource{
 
 var OCNEConfigTemplate = schema.GroupVersionResource{
 	Group:    "bootstrap.cluster.x-k8s.io",
-	Version:  "v1beta1",
+	Version:  V1Alpha1Version,
 	Resource: "ocneconfigtemplates",
 }
 
@@ -76,12 +77,12 @@ var ConfigMap = schema.GroupVersionResource{
 
 var Verrazzano = schema.GroupVersionResource{
 	Group:    "install.verrazzano.io",
-	Version:  "v1beta1",
+	Version:  V1Beta1Version,
 	Resource: "verrazzanos",
 }
 
 var VerrazzanoManagedCluster = schema.GroupVersionResource{
 	Group:    "clusters.verrazzano.io",
-	Version:  "v1alpha1",
+	Version:  V1Alpha1Version,
 	Resource: "verrazzanomanagedclusters",
 }

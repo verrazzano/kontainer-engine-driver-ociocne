@@ -12,8 +12,6 @@ func TestHashString(t *testing.T) {
 	vars := &Variables{
 		ControlPlaneVolumeGbs: DefaultVolumeGbs,
 		ControlPlaneMemoryGbs: DefaultMemoryGbs,
-		NodeVolumeGbs:         DefaultVolumeGbs,
-		NodeMemoryGbs:         DefaultMemoryGbs,
 	}
 	varsHashPresent := vars
 	varsHashPresent.Hash = "xyz"
@@ -41,8 +39,7 @@ func TestHashString(t *testing.T) {
 			&Variables{
 				ControlPlaneVolumeGbs: DefaultVolumeGbs,
 				ControlPlaneMemoryGbs: DefaultMemoryGbs,
-				NodeVolumeGbs:         DefaultVolumeGbs,
-				NodeMemoryGbs:         128,
+				ControlPlaneReplicas:  1,
 			},
 			false,
 		},
@@ -50,15 +47,31 @@ func TestHashString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ha, err := tt.va.HashSum()
-			assert.NoError(t, err)
-			hb, err := tt.vb.HashSum()
-			assert.NoError(t, err)
+			tt.va.SetHashes()
+			tt.vb.SetHashes()
 			if tt.equal {
-				assert.Equal(t, ha, hb)
+				assert.Equal(t, tt.va.ControlPlaneHash, tt.vb.ControlPlaneHash)
 			} else {
-				assert.NotEqual(t, ha, hb)
+				assert.NotEqual(t, tt.va.ControlPlaneHash, tt.vb.ControlPlaneHash)
 			}
 		})
 	}
+}
+
+func TestParseNodePools(t *testing.T) {
+	v := &Variables{
+		RawNodePools: []string{
+			"{\"name\":\"np-1\",\"replicas\":2,\"memory\":16,\"ocpus\":1,\"volumeSize\":50,\"shape\":\"VM.Standard.E4.Flex\"}",
+			"{\"name\":\"np-2\",\"replicas\":4,\"memory\":64,\"ocpus\":8,\"volumeSize\":250,\"shape\":\"VM.Standard.E4.Flex\"}",
+		},
+	}
+
+	nps, err := v.ParseNodePools()
+	assert.NoError(t, err)
+	assert.Len(t, nps, 2)
+
+	np1 := nps[0]
+	np2 := nps[1]
+	assert.Equal(t, np1.Name, "np-1")
+	assert.Equal(t, np2.Name, "np-2")
 }
