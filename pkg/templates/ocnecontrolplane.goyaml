@@ -16,8 +16,10 @@ spec:
   replicas: {{.ControlPlaneReplicas}}
   version: {{.KubernetesVersion}}
   controlPlaneConfig:
-{{- if .ProxyEndpoint }}
     imageConfiguration:
+      dependencies:
+        skipInstall: {{.SkipOCNEInstall}}
+{{- if .ProxyEndpoint }}
       proxy:
         httpProxy: {{.ProxyEndpoint}}
         httpsProxy: {{.ProxyEndpoint}}

@@ -18,6 +18,7 @@ const (
 	PodCIDR             = "pod-cidr"
 	ClusterCIDR         = "cluster-cidr"
 	ImageDisplayName    = "image-display-name"
+	ImageId             = "image-id"
 
 	RawNodePools = "node-pools"
 
@@ -47,6 +48,7 @@ const (
 
 	PreOCNECommands  = "pre-ocne-commands"
 	PostOCNECommands = "post-ocne-commands"
+	SkipOCNEInstall  = "skip-ocne-install"
 
 	CloudCredentialId = "cloud-credential-id"
 	Region            = "region"

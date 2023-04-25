@@ -9,8 +9,10 @@ metadata:
 spec:
   template:
     spec:
-{{- if .ProxyEndpoint }}
       imageConfiguration:
+        dependencies:
+          skipInstall: {{.SkipOCNEInstall}}
+{{- if .ProxyEndpoint }}
         proxy:
           httpProxy: {{.ProxyEndpoint}}
           httpsProxy: {{.ProxyEndpoint}}

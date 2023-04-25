@@ -116,6 +116,7 @@ type (
 
 		PreOCNECommands  []string
 		PostOCNECommands []string
+		SkipOCNEInstall  bool
 
 		// Addons, images, and registries
 		InstallVerrazzano    bool
@@ -201,6 +202,8 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 		// Other
 		ProxyEndpoint:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),
+		ImageID:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImageId, "imageId").(string),
+		SkipOCNEInstall:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.SkipOCNEInstall, "skipOcneInstall").(bool),
 		PreOCNECommands:  options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PreOCNECommands, "preOcneCommands").(*types.StringSlice).Value,
 		PostOCNECommands: options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PostOCNECommands, "postOcneCommands").(*types.StringSlice).Value,
 		ProviderId:       ProviderId,
@@ -231,6 +234,8 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.RawNodePools = vNew.RawNodePools
 	v.SSHPublicKey = vNew.SSHPublicKey
 	v.DisplayName = vNew.DisplayName
+	v.SkipOCNEInstall = vNew.SkipOCNEInstall
+	v.ImageID = vNew.ImageID
 	return v.SetDynamicValues(ctx)
 }
 
