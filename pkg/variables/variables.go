@@ -425,8 +425,7 @@ func SetupOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables
 	v.User = string(cc.Data["ocicredentialConfig-userId"])
 	v.Fingerprint = string(cc.Data["ocicredentialConfig-fingerprint"])
 	v.Tenancy = string(cc.Data["ocicredentialConfig-tenancyId"])
-	// TODO: Support private key passphrase in cloud credentials
-	v.PrivateKeyPassphrase = ""
+	v.PrivateKeyPassphrase = string(cc.Data["ocicredentialConfig-passphrase"])
 	v.PrivateKey = string(cc.Data["ocicredentialConfig-privateKeyContents"])
 	v.PrivateKey = strings.Replace(v.PrivateKey, "\n", "\\n", -1)
 	return nil
