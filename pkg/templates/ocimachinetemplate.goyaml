@@ -18,7 +18,7 @@ items:
         spec:
           bootVolumeSizeInGBs: "{{.VolumeSize}}"
           compartmentId:  {{$.CompartmentID}}
-          imageId:  {{$.ImageID}}
+          imageId:  {{$.ActualImage}}
           isPvEncryptionInTransitEnabled: {{$.NodePVTransitEncryption}}
           metadata:
             ssh_authorized_keys: {{$.SSHPublicKey}}

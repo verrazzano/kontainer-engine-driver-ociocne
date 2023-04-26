@@ -11,7 +11,7 @@ spec:
     spec:
       bootVolumeSizeInGBs: "{{.ControlPlaneVolumeGbs}}"
       compartmentId:  {{.CompartmentID}}
-      imageId:  {{.ImageID}}
+      imageId:  {{.ActualImage}}
       isPvEncryptionInTransitEnabled: {{.NodePVTransitEncryption}}
       metadata:
         ssh_authorized_keys: {{.SSHPublicKey}}

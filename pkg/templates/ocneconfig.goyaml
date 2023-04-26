@@ -16,6 +16,7 @@ spec:
         proxy:
           httpProxy: {{.ProxyEndpoint}}
           httpsProxy: {{.ProxyEndpoint}}
+          noProxy: {{.ClusterCIDR}},{{.PodCIDR}}
 {{- end }}
       joinConfiguration:
         nodeRegistration:
