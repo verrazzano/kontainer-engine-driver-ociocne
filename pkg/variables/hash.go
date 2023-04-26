@@ -26,7 +26,7 @@ func (v *Variables) SetControlPlaneHash() {
 	b.WriteString(v.SSHPublicKey)
 	b.WriteString(v.ControlPlaneRegistry)
 	b.WriteString(v.ControlPlaneShape)
-	b.WriteString(v.ImageDisplayName)
+	b.WriteString(v.ActualImage)
 	b.WriteString(fmt.Sprintf("%d", v.ControlPlaneReplicas))
 	b.WriteString(fmt.Sprintf("%d", v.ControlPlaneOCPUs))
 	b.WriteString(fmt.Sprintf("%d", v.ControlPlaneMemoryGbs))
@@ -39,7 +39,7 @@ func (v *Variables) SetNodePoolHash() {
 	b := strings.Builder{}
 	b.WriteString(v.KubernetesVersion)
 	b.WriteString(v.SSHPublicKey)
-	b.WriteString(v.ImageDisplayName)
+	b.WriteString(v.ActualImage)
 	b.WriteString(strings.Join(v.RawNodePools, ""))
 	b.WriteString(fmt.Sprintf("%v", v.NodePVTransitEncryption))
 	v.NodePoolHash = hashSum(b.String())

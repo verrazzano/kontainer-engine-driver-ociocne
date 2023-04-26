@@ -113,9 +113,11 @@ type (
 		// ImageID is looked up by display name
 		ImageDisplayName string
 		ImageID          string
+		ActualImage      string
 
 		PreOCNECommands  []string
 		PostOCNECommands []string
+		SkipOCNEInstall  bool
 
 		// Addons, images, and registries
 		InstallVerrazzano    bool
@@ -201,6 +203,8 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 		// Other
 		ProxyEndpoint:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),
+		ImageID:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImageId, "imageId").(string),
+		SkipOCNEInstall:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.SkipOCNEInstall, "skipOcneInstall").(bool),
 		PreOCNECommands:  options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PreOCNECommands, "preOcneCommands").(*types.StringSlice).Value,
 		PostOCNECommands: options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.PostOCNECommands, "postOcneCommands").(*types.StringSlice).Value,
 		ProviderId:       ProviderId,
@@ -231,6 +235,8 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.RawNodePools = vNew.RawNodePools
 	v.SSHPublicKey = vNew.SSHPublicKey
 	v.DisplayName = vNew.DisplayName
+	v.SkipOCNEInstall = vNew.SkipOCNEInstall
+	v.ImageID = vNew.ImageID
 	return v.SetDynamicValues(ctx)
 }
 
@@ -241,7 +247,6 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 		return err
 	}
 	v.NodePools = nodePools
-	v.SetHashes()
 	client, err := k8s.InjectedInterface()
 	if err != nil {
 		return err
@@ -257,7 +262,11 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	if err := v.setImageId(ctx, ociClient); err != nil {
 		return err
 	}
-	return v.setSubnets(ctx, ociClient)
+	if err := v.setSubnets(ctx, ociClient); err != nil {
+		return err
+	}
+	v.SetHashes()
+	return nil
 }
 
 // GetConfigurationProvider creates a new configuration provider from Variables
@@ -346,11 +355,17 @@ func (v *Variables) ParseNodePools() ([]NodePool, error) {
 }
 
 func (v *Variables) setImageId(ctx context.Context, client oci.Client) error {
-	imageId, err := client.GetImageIdByName(ctx, v.ImageDisplayName, v.CompartmentID)
-	if err != nil {
-		return err
+	// if user is bringing their own image, skip the dynamic image lookup
+	if v.SkipOCNEInstall {
+		v.ActualImage = v.ImageID
+	} else {
+		imageId, err := client.GetImageIdByName(ctx, v.ImageDisplayName, v.CompartmentID)
+		if err != nil {
+			return err
+		}
+		v.ActualImage = imageId
 	}
-	v.ImageID = imageId
+
 	return nil
 }
 

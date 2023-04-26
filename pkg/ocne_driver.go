@@ -246,6 +246,17 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultBool: variables.DefaultNodePVTransitEncryption,
 		},
 	}
+	driverFlag.Options[driverconst.SkipOCNEInstall] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Whether to install OCNE",
+		Default: &types.Default{
+			DefaultBool: false,
+		},
+	}
+	driverFlag.Options[driverconst.ImageId] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "OCID for the node image (Optional)",
+	}
 	driverFlag.Options[driverconst.WorkerNodeSubnet] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "OCID for node pool subnet",
