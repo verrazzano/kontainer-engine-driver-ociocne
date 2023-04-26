@@ -356,14 +356,14 @@ func (v *Variables) ParseNodePools() ([]NodePool, error) {
 
 func (v *Variables) setImageId(ctx context.Context, client oci.Client) error {
 	// if user is bringing their own image, skip the dynamic image lookup
-	if !v.SkipOCNEInstall {
+	if v.SkipOCNEInstall {
+		v.ActualImage = v.ImageID
+	} else {
 		imageId, err := client.GetImageIdByName(ctx, v.ImageDisplayName, v.CompartmentID)
 		if err != nil {
 			return err
 		}
 		v.ActualImage = imageId
-	} else {
-		v.ActualImage = v.ImageID
 	}
 
 	return nil
