@@ -290,6 +290,13 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
 		},
 	}
+	driverFlag.Options[driverconst.ApplyYAMLs] = &types.Flag{
+		Type:  types.StringSliceType,
+		Usage: "YAMLs to apply on managed cluster",
+		Default: &types.Default{
+			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
+		},
+	}
 
 	return &driverFlag, nil
 }
@@ -344,6 +351,13 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 	driverFlag.Options[driverconst.RawNodePools] = &types.Flag{
 		Type:  types.StringSliceType,
 		Usage: "Cluster Node Pools",
+		Default: &types.Default{
+			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
+		},
+	}
+	driverFlag.Options[driverconst.ApplyYAMLs] = &types.Flag{
+		Type:  types.StringSliceType,
+		Usage: "YAMLs to apply on managed cluster",
 		Default: &types.Default{
 			DefaultStringSlice: &types.StringSlice{Value: []string{}}, // avoid nil value for init
 		},
@@ -484,8 +498,16 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		return info, fmt.Errorf("failed to create dynamic clientset for admin cluster %s: %v", state.Name, err)
 	}
 
+	capiClient := capi.NewCAPIClient()
+	if len(state.ApplyYAMLS) > 0 {
+		d.Logger.Infof("Installing additional YAML documents on cluster %s", state.Name)
+		if err := capiClient.CreateOrUpdateYAMLDocuments(ctx, managedDI, state); err != nil {
+			return info, fmt.Errorf("failed to install additional YAML documents on cluster %s: %v", state.Name, err)
+		}
+	}
+
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
-	if err := capi.NewCAPIClient().InstallAndRegisterVerrazzano(ctx, managedKI, managedDI, adminDi, state); err != nil {
+	if err := capiClient.InstallAndRegisterVerrazzano(ctx, managedKI, managedDI, adminDi, state); err != nil {
 		return info, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
 	}
 	d.Logger.Infof("+++ returning from PostCheck +++")

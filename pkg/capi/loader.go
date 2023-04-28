@@ -15,8 +15,23 @@ import (
 	"text/template"
 )
 
+//toObjects adapts a slice of yaml documents into an object array
+func toObjects(yamlDocuments []string) []object.Object {
+	var objects []object.Object
+	for _, document := range yamlDocuments {
+		yamls := strings.Split(document, "---")
+		for _, y := range yamls {
+			objects = append(objects, object.Object{
+				Text: y,
+			})
+		}
+	}
+
+	return objects
+}
+
 func loadTextTemplate(o object.Object, variables variables.Variables) ([]unstructured.Unstructured, error) {
-	t, err := template.New(o.GVR.Resource).Funcs(template.FuncMap{
+	t, err := template.New("objectText").Funcs(template.FuncMap{
 		"contains": strings.Contains,
 	}).Parse(o.Text)
 	if err != nil {

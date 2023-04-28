@@ -5,11 +5,32 @@ package object
 
 import (
 	"fmt"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"strings"
 )
+
+//GVR attempts to find the GVR for an unstructured object
+
+func GVR(u *unstructured.Unstructured) schema.GroupVersionResource {
+	gvk := u.GroupVersionKind()
+
+	kind := strings.ToLower(gvk.Kind)
+	var resource string
+	if kind[len(kind)-1] == 'y' {
+		resource = strings.TrimSuffix(kind, "y") + "ies"
+	} else {
+		resource = kind + "s"
+	}
+	return schema.GroupVersionResource{
+		Group:   gvk.Group,
+		Version: gvk.Version,
+		// e.g., "Verrazzano" becomes "verrazzanos"
+		Resource: resource,
+	}
+}
 
 func NestedField(o interface{}, fields ...string) (interface{}, error) {
 	if len(fields) < 1 {
@@ -73,7 +94,6 @@ func objectList(v *variables.Variables, i include) []Object {
 }
 
 type Object struct {
-	GVR          schema.GroupVersionResource
 	Text         string
 	LockedFields map[string]bool
 }
@@ -85,49 +105,49 @@ type include struct {
 }
 
 var vpo = []Object{
-	{GVR: gvr.ConfigMap, Text: templates.VPOConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.VPOResourceSet},
+	{Text: templates.VPOConfigMap},
+	{Text: templates.VPOResourceSet},
 }
 
 var csi = []Object{
-	{GVR: gvr.ConfigMap, Text: templates.CSIConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.CSIResourceSet},
+	{Text: templates.CSIConfigMap},
+	{Text: templates.CSIResourceSet},
 }
 
 var ccm = []Object{
-	{GVR: gvr.ConfigMap, Text: templates.CCMConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.CCMResourceSet},
+	{Text: templates.CCMConfigMap},
+	{Text: templates.CCMResourceSet},
 }
 
 var cni = []Object{
 	// Tigera CRDs
-	{GVR: gvr.ConfigMap, Text: templates.CalicoTigeraCRDInitialConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoTigeraCRDInitialResourceSet},
-	{GVR: gvr.ConfigMap, Text: templates.CalicoTigeraCRDFinalConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoTigeraCRDFinalResourceSet},
+	{Text: templates.CalicoTigeraCRDInitialConfigMap},
+	{Text: templates.CalicoTigeraCRDInitialResourceSet},
+	{Text: templates.CalicoTigeraCRDFinalConfigMap},
+	{Text: templates.CalicoTigeraCRDFinalResourceSet},
 	// Tigera Operator
-	{GVR: gvr.ConfigMap, Text: templates.CalicoTigeraaOperatorConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoTigeraOperatorResourceSet},
+	{Text: templates.CalicoTigeraaOperatorConfigMap},
+	{Text: templates.CalicoTigeraOperatorResourceSet},
 	// Calico resources
-	{GVR: gvr.ConfigMap, Text: templates.CalicoConfigMap},
-	{GVR: gvr.ClusterResourceSet, Text: templates.CalicoResourceSet},
+	{Text: templates.CalicoConfigMap},
+	{Text: templates.CalicoResourceSet},
 }
 
 var ControlPlane = []Object{
-	{GVR: gvr.OCNEControlPlane, Text: templates.OCNEControlPlane},
-	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIControlPlaneMachineTemplate},
+	{Text: templates.OCNEControlPlane},
+	{Text: templates.OCIControlPlaneMachineTemplate},
 }
 
 var Workers = []Object{
-	{GVR: gvr.MachineDeployment, Text: templates.MachineDeployment},
-	{GVR: gvr.OCIMachineTemplate, Text: templates.OCIMachineTemplate},
+	{Text: templates.MachineDeployment},
+	{Text: templates.OCIMachineTemplate},
 }
 
 var capi = []Object{
 	CAPICluster,
-	{GVR: gvr.ClusterIdentity, Text: templates.ClusterIdentity},
-	{GVR: gvr.OCICluster, Text: templates.OCICluster},
-	{GVR: gvr.OCNEConfigTemplate, Text: templates.OCNEConfigTemplate},
+	{Text: templates.ClusterIdentity},
+	{Text: templates.OCICluster},
+	{Text: templates.OCNEConfigTemplate},
 }
 
-var CAPICluster = Object{GVR: gvr.Cluster, Text: templates.Cluster}
+var CAPICluster = Object{Text: templates.Cluster}

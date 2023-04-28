@@ -21,6 +21,7 @@ const (
 	ImageId             = "image-id"
 
 	RawNodePools = "node-pools"
+	ApplyYAMLs   = "apply-yamls"
 
 	ControlPlaneOCPUs     = "control-plane-ocpus"
 	NumControlPlaneNodes  = "num-control-plane-nodes"

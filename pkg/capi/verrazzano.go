@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/api/apps/v1"
@@ -33,7 +32,6 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 
 	// Create the Verrazzano Resource if not exists
 	if _, err := cruObject(ctx, di, object.Object{
-		GVR:  gvr.Verrazzano,
 		Text: v.VerrazzanoResource,
 	}, v, false); err != nil {
 		return fmt.Errorf("install error: %v", err)
@@ -41,7 +39,6 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 
 	// Create the Verrazzano Managed Cluster Resource if not exists
 	if _, err := cruObject(ctx, adminDi, object.Object{
-		GVR:  gvr.VerrazzanoManagedCluster,
 		Text: templates.VMC,
 	}, v, false); err != nil {
 		return fmt.Errorf("registration error: %v", err)
