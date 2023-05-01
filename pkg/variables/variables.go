@@ -107,6 +107,7 @@ type (
 		ControlPlaneVolumeGbs   int64
 		NodePVTransitEncryption bool
 		RawNodePools            []string
+		ApplyYAMLS              []string
 		// Parsed node pools
 		NodePools []NodePool
 
@@ -183,6 +184,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		ControlPlaneMemoryGbs:   options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneMemoryGbs, "controlPlaneMemoryGbs").(int64),
 		ControlPlaneVolumeGbs:   options.GetValueFromDriverOptions(driverOptions, types.IntType, driverconst.ControlPlaneVolumeGbs, "controlPlaneVolumeGbs").(int64),
 		RawNodePools:            options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.RawNodePools, "nodePools").(*types.StringSlice).Value,
+		ApplyYAMLS:              options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.ApplyYAMLs, "applyYamls").(*types.StringSlice).Value,
 
 		// Image settings
 		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),

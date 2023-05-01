@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
-	gvr "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	v1 "k8s.io/api/core/v1"
@@ -55,6 +55,11 @@ func NewCAPIClient() *CAPIClient {
 
 func (c *CAPIClient) DeleteHangingResources(ctx context.Context, p dynamic.Interface, cruResult *CreateOrUpdateResult, namespace string) error {
 	return deleteWorkerObjects(ctx, p, cruResult, namespace)
+}
+
+func (c *CAPIClient) CreateOrUpdateYAMLDocuments(ctx context.Context, managedDi dynamic.Interface, v *variables.Variables) error {
+	_, err := createOrUpdateObjects(ctx, managedDi, toObjects(v.ApplyYAMLS), v)
+	return err
 }
 
 // CreateOrUpdateAllObjects creates or updates all cluster result
@@ -110,7 +115,7 @@ func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interfa
 	for _, o := range objects {
 		partialResult, err := createOrUpdateObject(ctx, dynamicInterface, o, v)
 		if err != nil {
-			return cruResult, fmt.Errorf("failed to create Object %s/%s/%s: %v", o.GVR.Group, o.GVR.Version, o.GVR.Resource, err)
+			return cruResult, fmt.Errorf("object processing error: %v", err)
 		}
 		cruResult.Merge(partialResult)
 	}
@@ -129,37 +134,39 @@ func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v
 		return cruResult, err
 	}
 
-	for _, u := range toCreateObject {
+	for idx := range toCreateObject {
+		u := &toCreateObject[idx]
 		// Try to fetch existing object
-		existingObject, err := client.Resource(o.GVR).Namespace(u.GetNamespace()).Get(ctx, u.GetName(), metav1.GetOptions{})
+		groupVersionResource := object.GVR(u)
+		existingObject, err := client.Resource(groupVersionResource).Namespace(u.GetNamespace()).Get(ctx, u.GetName(), metav1.GetOptions{})
 		if err != nil {
 			// if object doesn't exist, try to create it
 			if apierrors.IsNotFound(err) {
-				if err := createIfNotExists(ctx, client, o.GVR, &u); err != nil {
-					return cruResult, err
+				if err := createIfNotExists(ctx, client, u); err != nil {
+					return cruResult, fmt.Errorf("create failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
 				}
 			} else {
-				return cruResult, err
+				return cruResult, fmt.Errorf("get failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
 			}
 		} else if update { // If the Object exists, merge with existingObject and do an update
-			mergedObject := mergeUnstructured(existingObject, &u, o.LockedFields)
+			mergedObject := mergeUnstructured(existingObject, u, o.LockedFields)
 			if err != nil {
-				return cruResult, err
+				return cruResult, fmt.Errorf("merge failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
 			}
-			_, err = client.Resource(o.GVR).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
+			_, err = client.Resource(groupVersionResource).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
 			if err != nil {
-				return cruResult, err
+				return cruResult, fmt.Errorf("update failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
 			}
 		}
 
-		cruResult.Add(o.GVR.Resource, &u)
+		cruResult.Add(groupVersionResource.Resource, u)
 	}
 
 	return cruResult, nil
 }
 
-func createIfNotExists(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, u *unstructured.Unstructured) error {
-	_, err := client.Resource(gvr).Namespace(u.GetNamespace()).Create(ctx, u, metav1.CreateOptions{})
+func createIfNotExists(ctx context.Context, client dynamic.Interface, u *unstructured.Unstructured) error {
+	_, err := client.Resource(object.GVR(u)).Namespace(u.GetNamespace()).Create(ctx, u, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		return nil
 	}
@@ -173,17 +180,18 @@ func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.V
 		if err != nil {
 			return err
 		}
-		return deleteUnstructureds(ctx, client, o.GVR, us)
+		return deleteUnstructureds(ctx, client, us)
 	}
 	return deleteFromTmpl(object.Object{
-		GVR:  gvr.Cluster,
 		Text: templates.Cluster,
 	})
 }
 
-func deleteUnstructureds(ctx context.Context, di dynamic.Interface, gvr schema.GroupVersionResource, us []unstructured.Unstructured) error {
-	for _, u := range us {
-		return deleteIfExists(ctx, di, gvr, u.GetName(), u.GetNamespace())
+func deleteUnstructureds(ctx context.Context, di dynamic.Interface, us []unstructured.Unstructured) error {
+	for idx := range us {
+		u := &us[idx]
+		groupVersionResource := object.GVR(u)
+		return deleteIfExists(ctx, di, groupVersionResource, u.GetName(), u.GetNamespace())
 	}
 	return nil
 }
@@ -209,7 +217,7 @@ func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *C
 	// Delete unused machinedeployments
 	for _, md := range mds.Items {
 		// delete any machine deployments that were not in the CRU
-		_, err := deleteIfNotCRU(ctx, di, cruResult, gvr.MachineDeployment, &md)
+		_, err := deleteIfNotCRU(ctx, di, cruResult, &md)
 		if err != nil {
 			return err
 		}
@@ -224,9 +232,9 @@ func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *C
 	return nil
 }
 
-func deleteIfNotCRU(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, gvr schema.GroupVersionResource, u *unstructured.Unstructured) (bool, error) {
-	if !cruResult.Contains(gvr.Resource, u) {
-		return true, deleteUnstructureds(ctx, di, gvr, []unstructured.Unstructured{*u})
+func deleteIfNotCRU(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, u *unstructured.Unstructured) (bool, error) {
+	if !cruResult.Contains(object.GVR(u).Resource, u) {
+		return true, deleteUnstructureds(ctx, di, []unstructured.Unstructured{*u})
 	}
 	return false, nil
 }

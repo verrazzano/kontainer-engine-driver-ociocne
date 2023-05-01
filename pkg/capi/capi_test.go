@@ -225,7 +225,6 @@ func listGVK(u *unstructured.Unstructured) schema.GroupVersionKind {
 
 func createTestMachine(v *variables.Variables, phase string) *unstructured.Unstructured {
 	machine, err := loadTextTemplate(object.Object{
-		GVR:  testMachineGVR,
 		Text: testMachine,
 	}, *v)
 	if err != nil {
