@@ -239,6 +239,7 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.DisplayName = vNew.DisplayName
 	v.SkipOCNEInstall = vNew.SkipOCNEInstall
 	v.ImageID = vNew.ImageID
+	v.ApplyYAMLS = vNew.ApplyYAMLS
 	return v.SetDynamicValues(ctx)
 }
 
