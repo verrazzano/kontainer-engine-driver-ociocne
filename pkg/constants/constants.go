@@ -34,6 +34,8 @@ const (
 	CalicoImagePath      = "calico-image-path"
 	// TigeraTag used to determine version of tigera operator
 	TigeraTag     = "tigera-image-tag"
+	ETCDTag       = "etcd-image-tag"
+	CoreDNSTag    = "coredns-image-tag"
 	CCMImage      = "ccm-image"
 	OCICSIImage   = "oci-csi-image"
 	CSIRegistry   = "csi-registry"
