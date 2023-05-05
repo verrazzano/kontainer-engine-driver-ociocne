@@ -27,6 +27,8 @@ func (v *Variables) SetControlPlaneHash() {
 	b.WriteString(v.ControlPlaneRegistry)
 	b.WriteString(v.ControlPlaneShape)
 	b.WriteString(v.ActualImage)
+	b.WriteString(v.ETCDImageTag)
+	b.WriteString(v.CoreDNSImageTag)
 	b.WriteString(fmt.Sprintf("%d", v.ControlPlaneReplicas))
 	b.WriteString(fmt.Sprintf("%d", v.ControlPlaneOCPUs))
 	b.WriteString(fmt.Sprintf("%d", v.ControlPlaneMemoryGbs))

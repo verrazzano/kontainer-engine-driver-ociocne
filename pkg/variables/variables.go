@@ -32,7 +32,6 @@ const (
 
 	DefaultCNEPath            = "olcne"
 	DefaultRegistry           = "container-registry.oracle.com"
-	DefaultTigeraTag          = "v1.29.0"
 	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
 	DefaultCSIRegistry        = "k8s.gcr.io/sig-storage"
@@ -191,6 +190,8 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
 		CalicoImagePath:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
 		TigeraTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
+		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDTag, "etcdImageTag").(string),
+		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSTag, "corednsImageTag").(string),
 		CCMImage:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
 		OCICSIImage:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.OCICSIImage, "ociCsiImage").(string),
 		CSIRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CSIRegistry, "csiRegistry").(string),
@@ -214,10 +215,6 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	}
 	v.Namespace = v.Name
 
-	if err := v.SetVersionMapping(); err != nil {
-		return v, err
-	}
-
 	if err := v.SetDynamicValues(ctx); err != nil {
 		return v, err
 	}
@@ -226,9 +223,6 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error {
 	v.KubernetesVersion = vNew.KubernetesVersion
-	if err := v.SetVersionMapping(); err != nil {
-		return err
-	}
 	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
 	v.ImageDisplayName = vNew.ImageDisplayName
 	v.ControlPlaneOCPUs = vNew.ControlPlaneOCPUs
@@ -250,11 +244,11 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 		return err
 	}
 	v.NodePools = nodePools
-	client, err := k8s.InjectedInterface()
+	ki, err := k8s.InjectedInterface()
 	if err != nil {
 		return err
 	}
-	if err := SetupOCIAuth(ctx, client, v); err != nil {
+	if err := SetupOCIAuth(ctx, ki, v); err != nil {
 		return err
 	}
 
@@ -266,6 +260,9 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 		return err
 	}
 	if err := v.setSubnets(ctx, ociClient); err != nil {
+		return err
+	}
+	if err := v.setVersionDefaults(ctx, ki); err != nil {
 		return err
 	}
 	v.SetHashes()
@@ -332,17 +329,6 @@ func (v *Variables) Version() *types.KubernetesVersion {
 	}
 }
 
-func (v *Variables) SetVersionMapping() error {
-	props, ok := version.Mapping[v.KubernetesVersion]
-	if !ok {
-		return fmt.Errorf("unknown kubernetes version %s", v.KubernetesVersion)
-	}
-	v.ETCDImageTag = props.ETCDImageTag
-	v.CoreDNSImageTag = props.CoreDNSImageTag
-	v.TigeraTag = props.TigeraTag
-	return nil
-}
-
 func (v *Variables) ParseNodePools() ([]NodePool, error) {
 	var nodePools []NodePool
 
@@ -404,6 +390,17 @@ func (v *Variables) setSubnets(ctx context.Context, client oci.Client) error {
 		return err
 	}
 	v.Subnets = subnets
+	return nil
+}
+
+func (v *Variables) setVersionDefaults(ctx context.Context, ki kubernetes.Interface) error {
+	defaults, err := version.GetDefaultsForVersion(ctx, ki, v.KubernetesVersion)
+	if err != nil {
+		return err
+	}
+	v.TigeraTag = defaults.TigeraOperator
+	v.CoreDNSImageTag = defaults.CoreDNS
+	v.ETCDImageTag = defaults.ETCD
 	return nil
 }
 

@@ -91,7 +91,7 @@ func TestRenderObjects(t *testing.T) {
 		NodePVTransitEncryption: true,
 		ControlPlaneShape:       "VM.Standard.E4.Flex",
 		KubernetesVersion:       "v1.24.8",
-		TigeraTag:               variables.DefaultTigeraTag,
+		TigeraTag:               "123",
 		CalicoRegistry:          variables.DefaultRegistry,
 		CalicoImagePath:         variables.DefaultCNEPath,
 		CCMImage:                variables.DefaultCCMImage,

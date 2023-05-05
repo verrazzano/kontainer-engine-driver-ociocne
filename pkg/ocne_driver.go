@@ -12,6 +12,7 @@ import (
 	driverconst "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/constants"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/k8s"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/version"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
@@ -62,6 +63,11 @@ func (d *OCIOCNEDriver) Remove(ctx context.Context, info *types.ClusterInfo) err
 // GetDriverCreateOptions implements driver interface
 func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.DriverFlags, error) {
 	d.Logger.Infof("capi.driver.GetDriverCreateOptions(...) called")
+
+	defaults, err := loadDefaults(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	driverFlag := types.DriverFlags{
 		Options: make(map[string]*types.Flag),
@@ -186,6 +192,9 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 	driverFlag.Options[driverconst.KubernetesVersion] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The Kubernetes version that will be used for your master and worker nodes e.g. v1.11.9, v1.12.7",
+		Default: &types.Default{
+			DefaultString: defaults.KubernetesVersion,
+		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
 		Type:  types.IntType,
@@ -305,6 +314,11 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.DriverFlags, error) {
 	d.Logger.Infof("capi.driver.GetDriverUpdateOptions(...) called")
 
+	defaults, err := loadDefaults(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	driverFlag := types.DriverFlags{
 		Options: make(map[string]*types.Flag),
 	}
@@ -321,7 +335,10 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 	}
 	driverFlag.Options[driverconst.KubernetesVersion] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The updated Kubernetes version",
+		Usage: "The Kubernetes version that will be used for your master and worker nodes e.g. v1.11.9, v1.12.7",
+		Default: &types.Default{
+			DefaultString: defaults.KubernetesVersion,
+		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
 		Type:  types.IntType,
@@ -734,4 +751,16 @@ func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
 		return fmt.Errorf("failed to create objects: %v", err)
 	}
 	return nil
+}
+
+func loadDefaults(ctx context.Context) (*version.Defaults, error) {
+	ki, err := k8s.InjectedInterface()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubernetes interface for default values: %v", err)
+	}
+	defaults, err := version.LoadDefaults(ctx, ki)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load default values: %v", err)
+	}
+	return defaults, nil
 }
