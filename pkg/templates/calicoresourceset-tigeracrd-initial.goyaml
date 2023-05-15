@@ -13,4 +13,4 @@ spec:
   resources:
     - kind: ConfigMap
       name: {{.Name}}-tigera-resources-initial
-  mode: Reconcile
+  strategy: Reconcile
