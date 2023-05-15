@@ -13,4 +13,4 @@ spec:
   resources:
     - kind: ConfigMap
       name: {{.Name}}-tigera-operator
-  mode: Reconcile
+  strategy: Reconcile

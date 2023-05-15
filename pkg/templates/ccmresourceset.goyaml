@@ -13,4 +13,4 @@ spec:
   resources:
     - kind: ConfigMap
       name: {{.Name}}-oci-cloud-controller-manager
-  mode: Reconcile
+  strategy: Reconcile
