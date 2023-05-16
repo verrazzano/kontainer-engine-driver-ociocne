@@ -6,6 +6,7 @@ package capi
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,7 +16,7 @@ import (
 	"text/template"
 )
 
-//toObjects adapts a slice of yaml documents into an object array
+// toObjects adapts a slice of yaml documents into an object array
 func toObjects(yamlDocuments []string) []object.Object {
 	var objects []object.Object
 	for _, document := range yamlDocuments {
@@ -31,6 +32,7 @@ func toObjects(yamlDocuments []string) []object.Object {
 }
 
 func loadTextTemplate(o object.Object, variables variables.Variables) ([]unstructured.Unstructured, error) {
+	fmt.Printf("+++ loadTextTemplate called . Name = %v +++ \n", variables.Name)
 	t, err := template.New("objectText").Funcs(template.FuncMap{
 		"contains": strings.Contains,
 	}).Parse(o.Text)
@@ -39,12 +41,16 @@ func loadTextTemplate(o object.Object, variables variables.Variables) ([]unstruc
 	}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, variables); err != nil {
+		fmt.Println("+++ Error = %v+ \n", err)
 		return nil, err
 	}
 	templatedBytes := buf.Bytes()
 	u, err := toUnstructured(templatedBytes)
 	if err != nil {
 		return nil, err
+	}
+	for idx := range u {
+		fmt.Printf("+++ Unstructured Object Name = %v +++ \n", object.GVR(&u[idx]))
 	}
 	return u, nil
 }
