@@ -41,7 +41,7 @@ func loadTextTemplate(o object.Object, variables variables.Variables) ([]unstruc
 	}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, variables); err != nil {
-		fmt.Println("+++ Error = %v+ \n", err)
+		fmt.Printf("+++ Error = %v +++ \n", err)
 		return nil, err
 	}
 	templatedBytes := buf.Bytes()
