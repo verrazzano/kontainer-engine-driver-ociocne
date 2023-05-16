@@ -37,20 +37,22 @@ func loadTextTemplate(o object.Object, variables variables.Variables) ([]unstruc
 		"contains": strings.Contains,
 	}).Parse(o.Text)
 	if err != nil {
+		fmt.Printf("+++ loadTextTemplate Parse Error = %v +++ \n", err)
 		return nil, err
 	}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, variables); err != nil {
-		fmt.Printf("+++ Error = %v +++ \n", err)
+		fmt.Printf("+++ loadTextTemplate Execute Error = %v +++ \n", err)
 		return nil, err
 	}
 	templatedBytes := buf.Bytes()
 	u, err := toUnstructured(templatedBytes)
 	if err != nil {
+		fmt.Printf("+++ loadTextTemplate toUnstructured Error = %v +++ \n", err)
 		return nil, err
 	}
 	for idx := range u {
-		fmt.Printf("+++ Unstructured Object Name = %v +++ \n", object.GVR(&u[idx]))
+		fmt.Printf("+++ loadTextTemplate Unstructured Object Name = %v +++ \n", object.GVR(&u[idx]))
 	}
 	return u, nil
 }

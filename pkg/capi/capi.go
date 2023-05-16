@@ -69,6 +69,7 @@ func (c *CAPIClient) CreateOrUpdateAllObjects(ctx context.Context, kubernetesInt
 	}
 	cruResult, err := createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
 	if err != nil {
+		fmt.Printf("+++ CreateOrUpdateAllObjects Error = %v +++ \n", err)
 		return cruResult, err
 	}
 	return cruResult, c.WaitForCAPIClusterReady(ctx, dynamicInterface, v)
@@ -131,6 +132,7 @@ func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v
 	cruResult := NewCreateOrUpdateResult()
 	toCreateObject, err := loadTextTemplate(o, *v)
 	if err != nil {
+		fmt.Printf("+++ cruObject Error = %v +++ \n", err)
 		return cruResult, err
 	}
 
@@ -139,6 +141,7 @@ func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v
 		// Try to fetch existing object
 		groupVersionResource := object.GVR(u)
 		existingObject, err := client.Resource(groupVersionResource).Namespace(u.GetNamespace()).Get(ctx, u.GetName(), metav1.GetOptions{})
+		fmt.Printf("+++ Object  = %v, KinD = %v +++ \n", u.GetName(), u.GetKind())
 		if err != nil {
 			// if object doesn't exist, try to create it
 			if apierrors.IsNotFound(err) {
@@ -161,7 +164,6 @@ func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v
 
 		cruResult.Add(groupVersionResource.Resource, u)
 	}
-
 	return cruResult, nil
 }
 
