@@ -15,7 +15,7 @@ import (
 
 const (
 	configMapName      = "ocne-metadata"
-	configMapNamespace = "verrazzano-install"
+	configMapNamespace = "verrazzano-capi"
 )
 
 type Defaults struct {
