@@ -14,7 +14,6 @@ import (
 	driverconst "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/constants"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/k8s"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/oci"
-	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/version"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -98,6 +97,7 @@ type (
 
 		// Cluster topology and configuration
 		KubernetesVersion       string
+		OCNEVersion             string
 		SSHPublicKey            string
 		ControlPlaneShape       string
 		ControlPlaneReplicas    int64
@@ -159,6 +159,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		Name:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ClusterName).(string),
 		DisplayName:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.DisplayName, "displayName").(string),
 		KubernetesVersion: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.KubernetesVersion, "kubernetesVersion").(string),
+		OCNEVersion:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.OCNEVersion, "ocneVersion").(string),
 
 		// User and authentication
 		SSHPublicKey:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.NodePublicKeyContents, "nodePublicKeyContents").(string),
@@ -260,9 +261,6 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 		return err
 	}
 	if err := v.setSubnets(ctx, ociClient); err != nil {
-		return err
-	}
-	if err := v.setVersionDefaults(ctx, ki); err != nil {
 		return err
 	}
 	v.SetHashes()
@@ -390,17 +388,6 @@ func (v *Variables) setSubnets(ctx context.Context, client oci.Client) error {
 		return err
 	}
 	v.Subnets = subnets
-	return nil
-}
-
-func (v *Variables) setVersionDefaults(ctx context.Context, ki kubernetes.Interface) error {
-	defaults, err := version.GetDefaultsForVersion(ctx, ki, v.KubernetesVersion)
-	if err != nil {
-		return err
-	}
-	v.TigeraTag = defaults.TigeraOperator
-	v.CoreDNSImageTag = defaults.CoreDNS
-	v.ETCDImageTag = defaults.ETCD
 	return nil
 }
 

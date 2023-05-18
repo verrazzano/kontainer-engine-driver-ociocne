@@ -196,6 +196,34 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultString: defaults.KubernetesVersion,
 		},
 	}
+	driverFlag.Options[driverconst.OCNEVersion] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The OCNE Version",
+		Default: &types.Default{
+			DefaultString: defaults.Release,
+		},
+	}
+	driverFlag.Options[driverconst.CoreDNSTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The CoreDNS image tag",
+		Default: &types.Default{
+			DefaultString: defaults.ContainerImages.CoreDNS,
+		},
+	}
+	driverFlag.Options[driverconst.ETCDTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The ETCD image tag",
+		Default: &types.Default{
+			DefaultString: defaults.ContainerImages.ETCD,
+		},
+	}
+	driverFlag.Options[driverconst.TigeraTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Tigera Operator image tag",
+		Default: &types.Default{
+			DefaultString: defaults.ContainerImages.TigeraOperator,
+		},
+	}
 	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
 		Type:  types.IntType,
 		Usage: "Optional number of OCPUs for control plane nodes",
@@ -338,6 +366,34 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Usage: "The Kubernetes version that will be used for your master and worker nodes e.g. v1.11.9, v1.12.7",
 		Default: &types.Default{
 			DefaultString: defaults.KubernetesVersion,
+		},
+	}
+	driverFlag.Options[driverconst.OCNEVersion] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The OCNE Version",
+		Default: &types.Default{
+			DefaultString: defaults.Release,
+		},
+	}
+	driverFlag.Options[driverconst.CoreDNSTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The CoreDNS image tag",
+		Default: &types.Default{
+			DefaultString: defaults.ContainerImages.CoreDNS,
+		},
+	}
+	driverFlag.Options[driverconst.ETCDTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The ETCD image tag",
+		Default: &types.Default{
+			DefaultString: defaults.ContainerImages.ETCD,
+		},
+	}
+	driverFlag.Options[driverconst.TigeraTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Tigera Operator image tag",
+		Default: &types.Default{
+			DefaultString: defaults.ContainerImages.TigeraOperator,
 		},
 	}
 	driverFlag.Options[driverconst.ControlPlaneOCPUs] = &types.Flag{
