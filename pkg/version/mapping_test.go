@@ -13,15 +13,19 @@ import (
 )
 
 const testCMData = `v1.24.8:
-  calico: v3.25.0
-  coredns: 1.8.6
-  etcd: 3.5.3
-  tigera-operator: v1.29.0
+  Release: "1.5"
+  container-images:
+    calico: v3.25.0
+    coredns: 1.8.6
+    etcd: 3.5.3
+    tigera-operator: v1.29.0
 v1.25.7:
-  calico: v3.25.0
-  coredns: v1.9.3
-  etcd: 3.5.6
-  tigera-operator: v1.29.0`
+  Release: "1.6"
+  container-images:
+    calico: v3.25.0
+    coredns: v1.9.3
+    etcd: 3.5.6
+    tigera-operator: v1.29.0`
 
 func TestLoadDefaults(t *testing.T) {
 	ki := fake.NewSimpleClientset(&v1.ConfigMap{
@@ -37,7 +41,7 @@ func TestLoadDefaults(t *testing.T) {
 	defaults, err := LoadDefaults(context.TODO(), ki)
 	assert.NoError(t, err)
 	assert.Equal(t, "v1.25.7", defaults.KubernetesVersion)
-	assert.Equal(t, "v1.9.3", defaults.CoreDNS)
-	assert.Equal(t, "v1.29.0", defaults.TigeraOperator)
-	assert.Equal(t, "3.5.6", defaults.ETCD)
+	assert.Equal(t, "v1.9.3", defaults.ContainerImages.CoreDNS)
+	assert.Equal(t, "v1.29.0", defaults.ContainerImages.TigeraOperator)
+	assert.Equal(t, "3.5.6", defaults.ContainerImages.ETCD)
 }

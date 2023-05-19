@@ -7,6 +7,7 @@ const (
 	ClusterName           = "name"
 	DisplayName           = "display-name"
 	KubernetesVersion     = "kubernetes-version"
+	OCNEVersion           = "ocne-version"
 	NodePublicKeyContents = "node-public-key-contents"
 
 	CompartmentID       = "compartment-id"

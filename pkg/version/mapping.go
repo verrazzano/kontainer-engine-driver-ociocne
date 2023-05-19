@@ -6,7 +6,6 @@ package version
 import (
 	"context"
 	"errors"
-	"fmt"
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,23 +18,14 @@ const (
 )
 
 type Defaults struct {
-	Calico            string `json:"calico"`
-	CoreDNS           string `json:"coredns"`
-	ETCD              string `json:"etcd"`
-	TigeraOperator    string `json:"tigera-operator" yaml:"tigera-operator"`
+	Release         string `json:"Release"`
+	ContainerImages struct {
+		Calico         string `json:"calico"`
+		CoreDNS        string `json:"coredns"`
+		ETCD           string `json:"etcd"`
+		TigeraOperator string `json:"tigera-operator" yaml:"tigera-operator"`
+	} `json:"container-images" yaml:"container-images"`
 	KubernetesVersion string `json:"-"`
-}
-
-func GetDefaultsForVersion(ctx context.Context, ki kubernetes.Interface, kubernetesVersion string) (*Defaults, error) {
-	versions, err := getVersionMapping(ctx, ki)
-	if err != nil {
-		return nil, err
-	}
-	if versions == nil || versions[kubernetesVersion] == nil {
-		return nil, fmt.Errorf("no defaults available for version %s", kubernetesVersion)
-	}
-
-	return versions[kubernetesVersion], nil
 }
 
 func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, error) {
