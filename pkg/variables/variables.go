@@ -235,6 +235,9 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.SkipOCNEInstall = vNew.SkipOCNEInstall
 	v.ImageID = vNew.ImageID
 	v.ApplyYAMLS = vNew.ApplyYAMLS
+	v.TigeraTag = vNew.TigeraTag
+	v.ETCDImageTag = vNew.TigeraTag
+	v.CoreDNSImageTag = vNew.CoreDNSImageTag
 	return v.SetDynamicValues(ctx)
 }
 

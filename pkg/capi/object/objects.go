@@ -120,14 +120,6 @@ var ccm = []Object{
 }
 
 var cni = []Object{
-	// Tigera CRDs
-	{Text: templates.CalicoTigeraCRDInitialConfigMap},
-	{Text: templates.CalicoTigeraCRDInitialResourceSet},
-	{Text: templates.CalicoTigeraCRDFinalConfigMap},
-	{Text: templates.CalicoTigeraCRDFinalResourceSet},
-	// Tigera Operator
-	{Text: templates.CalicoTigeraaOperatorConfigMap},
-	{Text: templates.CalicoTigeraOperatorResourceSet},
 	// Calico resources
 	{Text: templates.CalicoConfigMap},
 	{Text: templates.CalicoResourceSet},
