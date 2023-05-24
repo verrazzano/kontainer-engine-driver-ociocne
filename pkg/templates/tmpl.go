@@ -29,9 +29,6 @@ var MachineDeployment string
 //go:embed ocimachinetemplate.goyaml
 var OCIMachineTemplate string
 
-//go:embed calicoresourceset.goyaml
-var CalicoResourceSet string
-
 //go:embed ccmresourceset.goyaml
 var CCMResourceSet string
 
@@ -44,8 +41,11 @@ var CCMConfigMap string
 //go:embed csiconfigmap.goyaml
 var CSIConfigMap string
 
-//go:embed calicoconfigmap.goyaml
-var CalicoConfigMap string
+//go:embed ccm-module.goyaml
+var CCMModule string
+
+//go:embed calico-module.goyaml
+var CalicoModule string
 
 //go:embed vporesourceset.goyaml
 var VPOResourceSet string

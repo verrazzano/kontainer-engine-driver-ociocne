@@ -33,14 +33,6 @@ data:
             rateLimitBucketRead: 5
             rateLimitQPSWrite: 20.0
             rateLimitBucketWrite: 5
-      ---
-      apiVersion: platform.verrazzano.io/v1alpha1
-      kind: Module
-      metadata:
-        name: ccm
-      spec:
-        moduleName: ccm
-        targetNamespace: kube-system
 kind: ConfigMap
 metadata:
     annotations:

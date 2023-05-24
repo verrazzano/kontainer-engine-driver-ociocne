@@ -1,0 +1,16 @@
+apiVersion: platform.verrazzano.io/v1alpha1
+kind: Module
+metadata:
+    name: ccm
+spec:
+    moduleName: ccm
+    targetNamespace: kube-system
+    {{- if .PrivateRegistry }}
+    overrides:
+        - values:
+              global:
+                  oci:
+                      registry: {{.PrivateRegistry}}
+                  csi:
+                      registry: {{.PrivateRegistry}}
+    {{- end }}

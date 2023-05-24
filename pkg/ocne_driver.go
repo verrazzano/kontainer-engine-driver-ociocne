@@ -105,46 +105,23 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The proxy endpoint to configure on control plane and worker nodes",
 	}
-	driverFlag.Options[driverconst.ControlPlaneRegistry] = &types.Flag{
+	driverFlag.Options[driverconst.PrivateRegistry] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The registry to use for control plane images",
-		Default: &types.Default{
-			DefaultString: fmt.Sprintf("%s/%s", variables.DefaultRegistry, variables.DefaultCNEPath),
-		},
+		Usage: "Private Registry URL",
 	}
-	driverFlag.Options[driverconst.CSIRegistry] = &types.Flag{
+	driverFlag.Options[driverconst.ImagePullSecretName] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The registry to use for CSI images",
-		Default: &types.Default{
-			DefaultString: variables.DefaultCSIRegistry,
-		},
+		Usage: "Image Pull Secret for Private Registry",
 	}
-	driverFlag.Options[driverconst.OCICSIImage] = &types.Flag{
+	driverFlag.Options[driverconst.ImagePullSecretNamespace] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The OCI CSI Provider Image",
-		Default: &types.Default{
-			DefaultString: variables.DefaultOCICSIImage,
-		},
-	}
-	driverFlag.Options[driverconst.CalicoRegistry] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The registry to use for calico cni images",
-		Default: &types.Default{
-			DefaultString: variables.DefaultRegistry,
-		},
+		Usage: "Image Pull Secret Namespace for Private Registry",
 	}
 	driverFlag.Options[driverconst.CalicoImagePath] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The repository path to use for calico cni images",
 		Default: &types.Default{
 			DefaultString: variables.DefaultCNEPath,
-		},
-	}
-	driverFlag.Options[driverconst.CCMImage] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "The image for OCI cloud-controller-manager",
-		Default: &types.Default{
-			DefaultString: variables.DefaultCCMImage,
 		},
 	}
 	driverFlag.Options[driverconst.InstallCalico] = &types.Flag{
@@ -157,13 +134,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 	driverFlag.Options[driverconst.InstallCCM] = &types.Flag{
 		Type:  types.BoolType,
 		Usage: "Install CCM addon",
-		Default: &types.Default{
-			DefaultBool: true,
-		},
-	}
-	driverFlag.Options[driverconst.InstallCSI] = &types.Flag{
-		Type:  types.BoolType,
-		Usage: "Install CSI addon",
 		Default: &types.Default{
 			DefaultBool: true,
 		},
@@ -367,6 +337,18 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Default: &types.Default{
 			DefaultString: defaults.KubernetesVersion,
 		},
+	}
+	driverFlag.Options[driverconst.PrivateRegistry] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "Private Registry URL",
+	}
+	driverFlag.Options[driverconst.ImagePullSecretName] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "Image Pull Secret for Private Registry",
+	}
+	driverFlag.Options[driverconst.ImagePullSecretNamespace] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "Image Pull Secret Namespace for Private Registry",
 	}
 	driverFlag.Options[driverconst.OCNEVersion] = &types.Flag{
 		Type:  types.StringType,
@@ -579,11 +561,14 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		}
 	}
 
+	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {
+		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
+	}
+
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
 	if err := capiClient.InstallAndRegisterVerrazzano(ctx, managedKI, managedDI, adminDi, state); err != nil {
 		return info, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
 	}
-	d.Logger.Infof("+++ returning from PostCheck +++")
 	return info, nil
 }
 

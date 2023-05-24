@@ -5,7 +5,6 @@ package capi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
@@ -20,7 +19,17 @@ import (
 const (
 	verrazzanoInstallNamespace = "verrazzano-install"
 	verrazzanoPlatformOperator = "verrazzano-platform-operator"
+	verrazzanoModuleOperator   = "verrazzano-module-operator"
 )
+
+func (c *CAPIClient) InstallModules(ctx context.Context, ki kubernetes.Interface, di dynamic.Interface, v *variables.Variables) error {
+	if err := c.waitForModuleOperatorReady(ctx, ki); err != nil {
+		return err
+	}
+
+	_, err := createOrUpdateObjects(ctx, di, object.Modules(v), v)
+	return err
+}
 
 func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, di, adminDi dynamic.Interface, v *variables.Variables) error {
 	if !v.InstallVerrazzano || v.VerrazzanoResource == "" {
@@ -46,23 +55,31 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	return nil
 }
 
-func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
+func (c *CAPIClient) waitForDeployment(ctx context.Context, ki kubernetes.Interface, namespace, name string) error {
 	endTime := time.Now().Add(c.verrazzanoTimeout)
 	for {
 		time.Sleep(c.verrazzanoPollingInterval)
-		vpoDeployment, err := ki.AppsV1().Deployments(verrazzanoInstallNamespace).Get(ctx, verrazzanoPlatformOperator, metav1.GetOptions{})
+		vpoDeployment, err := ki.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if isVPOReady(vpoDeployment) {
+		if isDeploymentReady(vpoDeployment) {
 			return nil
 		}
 		if time.Now().After(endTime) {
-			return errors.New("timed out waiting for Verrazzano Platform Operator to be ready")
+			return fmt.Errorf("timed out waiting for deployment %s/%s to be ready", namespace, name)
 		}
 	}
 }
 
-func isVPOReady(deployment *v1.Deployment) bool {
+func (c *CAPIClient) waitForModuleOperatorReady(ctx context.Context, ki kubernetes.Interface) error {
+	return c.waitForDeployment(ctx, ki, verrazzanoInstallNamespace, verrazzanoModuleOperator)
+}
+
+func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
+	return c.waitForDeployment(ctx, ki, verrazzanoInstallNamespace, verrazzanoPlatformOperator)
+}
+
+func isDeploymentReady(deployment *v1.Deployment) bool {
 	return deployment.Status.ReadyReplicas == *deployment.Spec.Replicas && deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

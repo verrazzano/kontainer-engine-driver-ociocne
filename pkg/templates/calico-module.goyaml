@@ -1,0 +1,25 @@
+apiVersion: platform.verrazzano.io/v1alpha1
+kind: Module
+metadata:
+    name: calico
+spec:
+    moduleName: calico
+    targetNamespace: default
+    overrides:
+        - values:
+              {{- if .ImagePullSecretCredentials }}
+              imagePullSecrets:
+                {{ .ImagePullSecretName }}: {{ .ImagePullSecretCredentials }}
+              {{- end }}
+              tigeraOperator:
+                  version: {{ .TigeraTag }}
+              installation:
+                  cni:
+                      type: Calico
+                  calicoNetwork:
+                      bgp: Disabled
+                      ipPools:
+                          - cidr: {{ .PodCIDR }}
+                            encapsulation: VXLAN
+                  registry: {{ .ControlPlaneRegistry }}
+                  imagePath: {{ .CalicoImagePath }}
