@@ -23,7 +23,6 @@ func (c *CAPIClient) UpdateCluster(ctx context.Context, ki kubernetes.Interface,
 		return fmt.Errorf("failed to create CAPI credentials: %v", err)
 	}
 
-	fmt.Printf("####### VERSION FOR UPDATE %s, %s, %s, %s\n", v.KubernetesVersion, v.ETCDImageTag, v.CoreDNSImageTag, v.TigeraTag)
 	// update the control plane nodes
 	if _, err := createOrUpdateObjects(ctx, di, object.ControlPlane, v); err != nil {
 		return fmt.Errorf("error updating control plane: %v", err)

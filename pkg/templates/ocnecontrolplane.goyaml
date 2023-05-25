@@ -42,15 +42,27 @@ spec:
           - localhost
           - 127.0.0.1
       dns:
-        imageRepository: {{.ControlPlaneRegistry}}
+        {{- if .PrivateRegistry }}
+        imageRepository: {{.PrivateRegistry}}
+        {{- else }}
+        imageRepository: container-registry.oracle.com/olcne
+        {{- end }}
         imageTag: {{.CoreDNSImageTag}}
       etcd:
         local:
-          imageRepository: {{.ControlPlaneRegistry}}
+          {{- if .PrivateRegistry }}
+          imageRepository: {{.PrivateRegistry}}
+          {{- else }}
+          imageRepository: container-registry.oracle.com/olcne
+          {{- end }}
           imageTag: {{.ETCDImageTag}}
       networking: {}
       scheduler: {}
-      imageRepository: {{.ControlPlaneRegistry}}
+      {{- if .PrivateRegistry }}
+      imageRepository: {{.PrivateRegistry}}
+      {{- else }}
+      imageRepository: container-registry.oracle.com/olcne
+      {{- end }}
     initConfiguration:
       nodeRegistration:
         criSocket: /var/run/crio/crio.sock

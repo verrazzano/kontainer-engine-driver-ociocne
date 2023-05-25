@@ -27,7 +27,6 @@ func (c *CAPIClient) InstallModules(ctx context.Context, ki kubernetes.Interface
 	if err := c.waitForModuleOperatorReady(ctx, ki); err != nil {
 		return err
 	}
-
 	_, err := createOrUpdateObjects(ctx, di, object.Modules(v), v)
 	return err
 }
