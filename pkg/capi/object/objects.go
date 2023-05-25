@@ -55,7 +55,7 @@ func Modules(v *variables.Variables) []Object {
 	if v.InstallCalico {
 		objects = append(objects, cniModule)
 	}
-	if v.InstallCalico {
+	if v.InstallCCM {
 		objects = append(objects, ccmModule)
 	}
 

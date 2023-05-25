@@ -234,7 +234,7 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.ImageID = vNew.ImageID
 	v.ApplyYAMLS = vNew.ApplyYAMLS
 	v.TigeraTag = vNew.TigeraTag
-	v.ETCDImageTag = vNew.TigeraTag
+	v.ETCDImageTag = vNew.ETCDImageTag
 	v.CoreDNSImageTag = vNew.CoreDNSImageTag
 	v.PrivateRegistry = vNew.PrivateRegistry
 	v.ImagePullSecretName = vNew.ImagePullSecretName

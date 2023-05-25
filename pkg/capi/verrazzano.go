@@ -10,6 +10,7 @@ import (
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -60,7 +61,7 @@ func (c *CAPIClient) waitForDeployment(ctx context.Context, ki kubernetes.Interf
 	for {
 		time.Sleep(c.verrazzanoPollingInterval)
 		vpoDeployment, err := ki.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 		if isDeploymentReady(vpoDeployment) {
@@ -73,7 +74,7 @@ func (c *CAPIClient) waitForDeployment(ctx context.Context, ki kubernetes.Interf
 }
 
 func (c *CAPIClient) waitForModuleOperatorReady(ctx context.Context, ki kubernetes.Interface) error {
-	return c.waitForDeployment(ctx, ki, verrazzanoInstallNamespace, verrazzanoModuleOperator)
+	return c.waitForDeployment(ctx, ki, verrazzanoModuleOperator, verrazzanoModuleOperator)
 }
 
 func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
@@ -81,5 +82,8 @@ func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki k
 }
 
 func isDeploymentReady(deployment *v1.Deployment) bool {
+	if deployment == nil || deployment.Spec.Replicas == nil {
+		return false
+	}
 	return deployment.Status.ReadyReplicas == *deployment.Spec.Replicas && deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

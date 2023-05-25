@@ -7,10 +7,6 @@ spec:
     targetNamespace: default
     overrides:
         - values:
-              {{- if .ImagePullSecretCredentials }}
-              imagePullSecrets:
-                {{ .ImagePullSecretName }}: {{ .ImagePullSecretCredentials }}
-              {{- end }}
               tigeraOperator:
                   version: {{ .TigeraTag }}
               installation:
