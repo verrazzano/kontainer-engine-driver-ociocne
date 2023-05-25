@@ -33,7 +33,6 @@ const (
 	PrivateRegistry          = "private-registry"
 	ImagePullSecretName      = "image-pull-secret-name"
 	ImagePullSecretNamespace = "image-pull-secret-namespace"
-	ControlPlaneRegistry     = "control-plane-registry"
 	CalicoImagePath          = "calico-image-path"
 	// TigeraTag used to determine version of tigera operator
 	TigeraTag     = "tigera-image-tag"

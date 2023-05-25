@@ -30,7 +30,6 @@ const (
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
 	DefaultCNEPath            = "olcne"
-	DefaultRegistry           = "container-registry.oracle.com"
 	DefaultVerrazzanoImage    = "ghcr.io/verrazzano/verrazzano-platform-operator:v1.5.2-20230315235330-0326ee67"
 	DefaultVerrazzanoResource = `apiVersion: install.verrazzano.io/v1beta1
 kind: Verrazzano
@@ -117,22 +116,18 @@ type (
 		SkipOCNEInstall  bool
 
 		// Addons, images, and registries
-		InstallVerrazzano    bool
-		VerrazzanoResource   string
-		VerrazzanoImage      string
-		InstallCalico        bool
-		InstallCCM           bool
-		ControlPlaneRegistry string
-		CalicoImagePath      string
-		TigeraTag            string
-		ETCDImageTag         string
-		CoreDNSImageTag      string
+		InstallVerrazzano  bool
+		VerrazzanoResource string
+		VerrazzanoImage    string
+		InstallCalico      bool
+		InstallCCM         bool
+		CalicoImagePath    string
+		TigeraTag          string
+		ETCDImageTag       string
+		CoreDNSImageTag    string
 
 		// Private registry
-		PrivateRegistry            string
-		ImagePullSecretName        string
-		ImagePullSecretNamespace   string
-		ImagePullSecretCredentials string
+		PrivateRegistry string
 
 		// OCI Credentials
 		CAPIOCINamespace     string
@@ -185,18 +180,15 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		ApplyYAMLS:              options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.ApplyYAMLs, "applyYamls").(*types.StringSlice).Value,
 
 		// Image settings
-		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
-		CalicoImagePath:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
-		TigeraTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
-		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDTag, "etcdImageTag").(string),
-		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSTag, "corednsImageTag").(string),
-		InstallCalico:        options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installCalico").(bool),
-		InstallCCM:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCCM, "installCcm").(bool),
+		CalicoImagePath: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
+		TigeraTag:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
+		ETCDImageTag:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDTag, "etcdImageTag").(string),
+		CoreDNSImageTag: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSTag, "corednsImageTag").(string),
+		InstallCalico:   options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installCalico").(bool),
+		InstallCCM:      options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCCM, "installCcm").(bool),
 
 		// Private Registry
-		PrivateRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateRegistry, "privateRegistry").(string),
-		ImagePullSecretName:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImagePullSecretName, "imagePullSecretName").(string),
-		ImagePullSecretNamespace: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ImagePullSecretNamespace, "imagePullSecretNamespace").(string),
+		PrivateRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateRegistry, "privateRegistry").(string),
 
 		// Verrazzano settings
 		VerrazzanoImage:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoImage, "verrazzanoImage").(string),
@@ -237,8 +229,6 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.ETCDImageTag = vNew.ETCDImageTag
 	v.CoreDNSImageTag = vNew.CoreDNSImageTag
 	v.PrivateRegistry = vNew.PrivateRegistry
-	v.ImagePullSecretName = vNew.ImagePullSecretName
-	v.ImagePullSecretNamespace = vNew.ImagePullSecretNamespace
 	return v.SetDynamicValues(ctx)
 }
 
@@ -416,30 +406,6 @@ func getSubnetById(ctx context.Context, client oci.Client, subnetId, role string
 		Name: role,
 		Role: role,
 	}, nil
-}
-
-func (v *Variables) SetPrivateRegistry(ctx context.Context, ki kubernetes.Interface) error {
-	// Set private registry if it is being used
-	v.ControlPlaneRegistry = DefaultRegistry
-	if len(v.PrivateRegistry) > 0 {
-		v.ControlPlaneRegistry = v.PrivateRegistry
-	}
-
-	// Fetch image pull secret credentials if required
-	if len(v.ImagePullSecretNamespace) > 0 && len(v.ImagePullSecretName) > 0 {
-		secret, err := ki.CoreV1().Secrets(v.ImagePullSecretNamespace).Get(ctx, v.ImagePullSecretName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		credentials := secret.Data[".dockerconfigjson"]
-		if len(credentials) < 1 {
-			return fmt.Errorf("invalid image pull secret: %s/%s", v.ImagePullSecretNamespace, v.ImagePullSecretName)
-		}
-
-		v.ImagePullSecretCredentials = string(credentials)
-	}
-	return nil
 }
 
 // SetupOCIAuth dynamically loads OCI authentication
