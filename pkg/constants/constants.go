@@ -30,10 +30,8 @@ const (
 	ControlPlaneShape     = "control-plane-shape"
 	ControlPlaneVolumeGbs = "control-plane-volume-gbs"
 
-	PrivateRegistry          = "private-registry"
-	ImagePullSecretName      = "image-pull-secret-name"
-	ImagePullSecretNamespace = "image-pull-secret-namespace"
-	CalicoImagePath          = "calico-image-path"
+	PrivateRegistry = "private-registry"
+	CalicoImagePath = "calico-image-path"
 	// TigeraTag used to determine version of tigera operator
 	TigeraTag     = "tigera-image-tag"
 	ETCDTag       = "etcd-image-tag"

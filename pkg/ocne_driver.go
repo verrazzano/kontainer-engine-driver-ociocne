@@ -109,14 +109,6 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "Private Registry URL",
 	}
-	driverFlag.Options[driverconst.ImagePullSecretName] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "Image Pull Secret for Private Registry",
-	}
-	driverFlag.Options[driverconst.ImagePullSecretNamespace] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "Image Pull Secret Namespace for Private Registry",
-	}
 	driverFlag.Options[driverconst.CalicoImagePath] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The repository path to use for calico cni images",
@@ -341,14 +333,6 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 	driverFlag.Options[driverconst.PrivateRegistry] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "Private Registry URL",
-	}
-	driverFlag.Options[driverconst.ImagePullSecretName] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "Image Pull Secret for Private Registry",
-	}
-	driverFlag.Options[driverconst.ImagePullSecretNamespace] = &types.Flag{
-		Type:  types.StringType,
-		Usage: "Image Pull Secret Namespace for Private Registry",
 	}
 	driverFlag.Options[driverconst.OCNEVersion] = &types.Flag{
 		Type:  types.StringType,
