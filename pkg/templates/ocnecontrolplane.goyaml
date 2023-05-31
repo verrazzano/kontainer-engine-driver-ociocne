@@ -8,6 +8,8 @@ metadata:
   namespace: {{.Namespace}}
 spec:
   addons:
+    {{- if .InstallVerrazzano }}
+    {{- end }}
     - chartName: verrazzano-module-operator
       namespace: verrazzano-module-operator
       releaseName: verrazzano-module-operator

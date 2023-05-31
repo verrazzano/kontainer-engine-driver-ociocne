@@ -123,11 +123,11 @@ func createOrUpdateObjects(ctx context.Context, dynamicInterface dynamic.Interfa
 }
 
 func createOrUpdateObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables) (*CreateOrUpdateResult, error) {
-	return cruObject(ctx, client, o, v, true)
+	return cruObject(ctx, client, o, v, func(u *unstructured.Unstructured) error { return nil })
 }
 
 // cruObject create or update an object
-func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables, update bool) (*CreateOrUpdateResult, error) {
+func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v *variables.Variables, updater func(u *unstructured.Unstructured) error) (*CreateOrUpdateResult, error) {
 	cruResult := NewCreateOrUpdateResult()
 	toCreateObject, err := loadTextTemplate(o, *v)
 	if err != nil {
@@ -148,10 +148,13 @@ func cruObject(ctx context.Context, client dynamic.Interface, o object.Object, v
 			} else {
 				return cruResult, fmt.Errorf("get failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
 			}
-		} else if update { // If the Object exists, merge with existingObject and do an update
+		} else { // If the Object exists, merge with existingObject and do an update
 			mergedObject := mergeUnstructured(existingObject, u, o.LockedFields)
 			if err != nil {
 				return cruResult, fmt.Errorf("merge failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
+			}
+			if err := updater(mergedObject); err != nil {
+				return cruResult, fmt.Errorf("spec update failed %s/%s/%s: %v", groupVersionResource.Group, groupVersionResource.Version, groupVersionResource.Resource, err)
 			}
 			_, err = client.Resource(groupVersionResource).Namespace(mergedObject.GetNamespace()).Update(context.TODO(), mergedObject, metav1.UpdateOptions{})
 			if err != nil {

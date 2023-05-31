@@ -47,11 +47,5 @@ var CCMModule string
 //go:embed calico-module.goyaml
 var CalicoModule string
 
-//go:embed vporesourceset.goyaml
-var VPOResourceSet string
-
-//go:embed vpoconfigmap.goyaml
-var VPOConfigMap string
-
 //go:embed vmc.goyaml
 var VMC string

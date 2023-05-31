@@ -41,7 +41,7 @@ const (
 
 	InstallVerrazzano  = "install-verrazzano"
 	VerrazzanoResource = "verrazzano-resource"
-	VerrazzanoImage    = "verrazzano-image"
+	VerrazzanoVersion  = "verrazzano-version"
 
 	ProxyEndpoint = "proxy-endpoint"
 

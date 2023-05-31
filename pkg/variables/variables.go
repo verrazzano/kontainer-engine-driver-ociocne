@@ -30,7 +30,6 @@ const (
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
 	DefaultCNEPath            = "olcne"
-	DefaultVerrazzanoImage    = "ghcr.io/verrazzano/verrazzano-platform-operator:v1.5.2-20230315235330-0326ee67"
 	DefaultVerrazzanoResource = `apiVersion: install.verrazzano.io/v1beta1
 kind: Verrazzano
 metadata:
@@ -115,10 +114,10 @@ type (
 		PostOCNECommands []string
 		SkipOCNEInstall  bool
 
-		// Addons, images, and registries
+		// Modules
 		InstallVerrazzano  bool
 		VerrazzanoResource string
-		VerrazzanoImage    string
+		VerrazzanoVersion  string
 		InstallCalico      bool
 		InstallCCM         bool
 		CalicoImagePath    string
@@ -191,7 +190,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		PrivateRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateRegistry, "privateRegistry").(string),
 
 		// Verrazzano settings
-		VerrazzanoImage:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoImage, "verrazzanoImage").(string),
+		VerrazzanoVersion:  options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoVersion, "verrazzanoImage").(string),
 		VerrazzanoResource: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoResource, "verrazzanoResource").(string),
 		InstallVerrazzano:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installVerrazzano").(bool),
 
@@ -229,6 +228,9 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.ETCDImageTag = vNew.ETCDImageTag
 	v.CoreDNSImageTag = vNew.CoreDNSImageTag
 	v.PrivateRegistry = vNew.PrivateRegistry
+	v.InstallVerrazzano = vNew.InstallVerrazzano
+	v.VerrazzanoVersion = vNew.VerrazzanoVersion
+	v.VerrazzanoResource = vNew.VerrazzanoResource
 	return v.SetDynamicValues(ctx)
 }
 
