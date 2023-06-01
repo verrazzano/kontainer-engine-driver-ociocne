@@ -92,9 +92,7 @@ func TestRenderObjects(t *testing.T) {
 		ControlPlaneShape:       "VM.Standard.E4.Flex",
 		KubernetesVersion:       "v1.24.8",
 		TigeraTag:               "123",
-		CalicoRegistry:          variables.DefaultRegistry,
 		CalicoImagePath:         variables.DefaultCNEPath,
-		CCMImage:                variables.DefaultCCMImage,
 		ControlPlaneOCPUs:       1,
 		ControlPlaneMemoryGbs:   16,
 		PodCIDR:                 "192.168.0.0/16",
@@ -128,7 +126,6 @@ func TestRenderObjects(t *testing.T) {
 		},
 
 		InstallVerrazzano: true,
-		InstallCSI:        true,
 		InstallCCM:        true,
 		InstallCalico:     true,
 	}

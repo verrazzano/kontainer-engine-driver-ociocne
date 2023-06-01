@@ -49,6 +49,19 @@ func NestedField(o interface{}, fields ...string) (interface{}, error) {
 	return NestedField(oNew, remainingFields...)
 }
 
+func Modules(v *variables.Variables) []Object {
+	var objects []Object
+
+	if v.InstallCalico {
+		objects = append(objects, cniModule)
+	}
+	if v.InstallCCM {
+		objects = append(objects, ccmModule)
+	}
+
+	return objects
+}
+
 func CreateObjects(v *variables.Variables) []Object {
 	return objectList(v, include{
 		workers:      true,
@@ -68,15 +81,8 @@ func UpdateObjects(v *variables.Variables) []Object {
 func objectList(v *variables.Variables, i include) []Object {
 	var res []Object
 
-	// Create addons if they are enabled
-	if v.InstallCalico {
-		res = append(res, cni...)
-	}
 	if v.InstallCCM {
 		res = append(res, ccm...)
-	}
-	if v.InstallCSI {
-		res = append(res, csi...)
 	}
 	if v.InstallVerrazzano {
 		res = append(res, vpo...)
@@ -109,28 +115,19 @@ var vpo = []Object{
 	{Text: templates.VPOResourceSet},
 }
 
-var csi = []Object{
+var ccm = []Object{
+	{Text: templates.CCMConfigMap},
+	{Text: templates.CCMResourceSet},
 	{Text: templates.CSIConfigMap},
 	{Text: templates.CSIResourceSet},
 }
 
-var ccm = []Object{
-	{Text: templates.CCMConfigMap},
-	{Text: templates.CCMResourceSet},
+var ccmModule = Object{
+	Text: templates.CCMModule,
 }
 
-var cni = []Object{
-	// Tigera CRDs
-	{Text: templates.CalicoTigeraCRDInitialConfigMap},
-	{Text: templates.CalicoTigeraCRDInitialResourceSet},
-	{Text: templates.CalicoTigeraCRDFinalConfigMap},
-	{Text: templates.CalicoTigeraCRDFinalResourceSet},
-	// Tigera Operator
-	{Text: templates.CalicoTigeraaOperatorConfigMap},
-	{Text: templates.CalicoTigeraOperatorResourceSet},
-	// Calico resources
-	{Text: templates.CalicoConfigMap},
-	{Text: templates.CalicoResourceSet},
+var cniModule = Object{
+	Text: templates.CalicoModule,
 }
 
 var ControlPlane = []Object{

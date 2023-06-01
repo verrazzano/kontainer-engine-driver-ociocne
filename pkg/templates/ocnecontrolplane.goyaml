@@ -7,6 +7,11 @@ metadata:
   name:  {{.Name}}-control-plane
   namespace: {{.Namespace}}
 spec:
+  moduleOperator:
+    enabled: true
+    {{- if .PrivateRegistry }}
+    repository: {{ .PrivateRegistry }}/module-operator
+    {{- end }}
   machineTemplate:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -31,15 +36,27 @@ spec:
           - localhost
           - 127.0.0.1
       dns:
-        imageRepository: {{.ControlPlaneRegistry}}
+        {{- if .PrivateRegistry }}
+        imageRepository: {{.PrivateRegistry}}/olcne
+        {{- else }}
+        imageRepository: container-registry.oracle.com/olcne
+        {{- end }}
         imageTag: {{.CoreDNSImageTag}}
       etcd:
         local:
-          imageRepository: {{.ControlPlaneRegistry}}
+          {{- if .PrivateRegistry }}
+          imageRepository: {{.PrivateRegistry}}/olcne
+          {{- else }}
+          imageRepository: container-registry.oracle.com/olcne
+          {{- end }}
           imageTag: {{.ETCDImageTag}}
       networking: {}
       scheduler: {}
-      imageRepository: {{.ControlPlaneRegistry}}
+      {{- if .PrivateRegistry }}
+      imageRepository: {{.PrivateRegistry}}/olcne
+      {{- else }}
+      imageRepository: container-registry.oracle.com/olcne
+      {{- end }}
     initConfiguration:
       nodeRegistration:
         criSocket: /var/run/crio/crio.sock

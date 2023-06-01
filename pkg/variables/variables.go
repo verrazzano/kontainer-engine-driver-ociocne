@@ -30,10 +30,6 @@ const (
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
 	DefaultCNEPath            = "olcne"
-	DefaultRegistry           = "container-registry.oracle.com"
-	DefaultCCMImage           = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
-	DefaultOCICSIImage        = "ghcr.io/oracle/cloud-provider-oci:v1.24.0"
-	DefaultCSIRegistry        = "k8s.gcr.io/sig-storage"
 	DefaultVerrazzanoImage    = "ghcr.io/verrazzano/verrazzano-platform-operator:v1.5.2-20230315235330-0326ee67"
 	DefaultVerrazzanoResource = `apiVersion: install.verrazzano.io/v1beta1
 kind: Verrazzano
@@ -120,21 +116,18 @@ type (
 		SkipOCNEInstall  bool
 
 		// Addons, images, and registries
-		InstallVerrazzano    bool
-		VerrazzanoResource   string
-		VerrazzanoImage      string
-		InstallCalico        bool
-		InstallCCM           bool
-		InstallCSI           bool
-		ControlPlaneRegistry string
-		CalicoRegistry       string
-		CalicoImagePath      string
-		TigeraTag            string
-		ETCDImageTag         string
-		CoreDNSImageTag      string
-		CCMImage             string
-		CSIRegistry          string
-		OCICSIImage          string
+		InstallVerrazzano  bool
+		VerrazzanoResource string
+		VerrazzanoImage    string
+		InstallCalico      bool
+		InstallCCM         bool
+		CalicoImagePath    string
+		TigeraTag          string
+		ETCDImageTag       string
+		CoreDNSImageTag    string
+
+		// Private registry
+		PrivateRegistry string
 
 		// OCI Credentials
 		CAPIOCINamespace     string
@@ -187,18 +180,15 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		ApplyYAMLS:              options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.ApplyYAMLs, "applyYamls").(*types.StringSlice).Value,
 
 		// Image settings
-		ControlPlaneRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ControlPlaneRegistry, "controlPlaneRegistry").(string),
-		CalicoRegistry:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoRegistry, "calicoImageRegistry").(string),
-		CalicoImagePath:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
-		TigeraTag:            options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
-		ETCDImageTag:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDTag, "etcdImageTag").(string),
-		CoreDNSImageTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSTag, "corednsImageTag").(string),
-		CCMImage:             options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CCMImage, "ccmImage").(string),
-		OCICSIImage:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.OCICSIImage, "ociCsiImage").(string),
-		CSIRegistry:          options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CSIRegistry, "csiRegistry").(string),
-		InstallCalico:        options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installCalico").(bool),
-		InstallCCM:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCCM, "installCcm").(bool),
-		InstallCSI:           options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCSI, "installCsi").(bool),
+		CalicoImagePath: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
+		TigeraTag:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
+		ETCDImageTag:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDTag, "etcdImageTag").(string),
+		CoreDNSImageTag: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSTag, "corednsImageTag").(string),
+		InstallCalico:   options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installCalico").(bool),
+		InstallCCM:      options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCCM, "installCcm").(bool),
+
+		// Private Registry
+		PrivateRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateRegistry, "privateRegistry").(string),
 
 		// Verrazzano settings
 		VerrazzanoImage:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoImage, "verrazzanoImage").(string),
@@ -235,6 +225,10 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.SkipOCNEInstall = vNew.SkipOCNEInstall
 	v.ImageID = vNew.ImageID
 	v.ApplyYAMLS = vNew.ApplyYAMLS
+	v.TigeraTag = vNew.TigeraTag
+	v.ETCDImageTag = vNew.ETCDImageTag
+	v.CoreDNSImageTag = vNew.CoreDNSImageTag
+	v.PrivateRegistry = vNew.PrivateRegistry
 	return v.SetDynamicValues(ctx)
 }
 

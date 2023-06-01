@@ -24,7 +24,7 @@ func (v *Variables) SetControlPlaneHash() {
 	b := strings.Builder{}
 	b.WriteString(v.KubernetesVersion)
 	b.WriteString(v.SSHPublicKey)
-	b.WriteString(v.ControlPlaneRegistry)
+	b.WriteString(v.PrivateRegistry)
 	b.WriteString(v.ControlPlaneShape)
 	b.WriteString(v.ActualImage)
 	b.WriteString(v.ETCDImageTag)
