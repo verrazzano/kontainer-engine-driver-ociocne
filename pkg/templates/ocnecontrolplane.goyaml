@@ -10,7 +10,7 @@ spec:
   moduleOperator:
     enabled: true
     {{- if .PrivateRegistry }}
-    repository: {{ .PrivateRegistry }}/verrazzano/module-operator
+    repository: {{ .PrivateRegistry }}/module-operator
     {{- end }}
   machineTemplate:
     infrastructureRef:
