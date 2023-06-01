@@ -9,6 +9,9 @@ metadata:
 spec:
   moduleOperator:
     enabled: true
+    {{- if .PrivateRegistry }}
+    repository: {{ .PrivateRegistry }}/verrazzano/module-operator
+    {{- end }}
   machineTemplate:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -34,7 +37,7 @@ spec:
           - 127.0.0.1
       dns:
         {{- if .PrivateRegistry }}
-        imageRepository: {{.PrivateRegistry}}
+        imageRepository: {{.PrivateRegistry}}/olcne
         {{- else }}
         imageRepository: container-registry.oracle.com/olcne
         {{- end }}
@@ -42,7 +45,7 @@ spec:
       etcd:
         local:
           {{- if .PrivateRegistry }}
-          imageRepository: {{.PrivateRegistry}}
+          imageRepository: {{.PrivateRegistry}}/olcne
           {{- else }}
           imageRepository: container-registry.oracle.com/olcne
           {{- end }}
@@ -50,7 +53,7 @@ spec:
       networking: {}
       scheduler: {}
       {{- if .PrivateRegistry }}
-      imageRepository: {{.PrivateRegistry}}
+      imageRepository: {{.PrivateRegistry}}/olcne
       {{- else }}
       imageRepository: container-registry.oracle.com/olcne
       {{- end }}
