@@ -114,7 +114,7 @@ type (
 		PostOCNECommands []string
 		SkipOCNEInstall  bool
 
-		// Modules
+		// Addons, images, and registries
 		InstallVerrazzano  bool
 		VerrazzanoResource string
 		VerrazzanoVersion  string

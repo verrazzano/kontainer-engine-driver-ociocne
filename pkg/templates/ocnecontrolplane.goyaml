@@ -7,22 +7,14 @@ metadata:
   name:  {{.Name}}-control-plane
   namespace: {{.Namespace}}
 spec:
-  addons:
-    {{- if .InstallVerrazzano }}
+  moduleOperator:
+    enabled: true
+    {{- if .PrivateRegistry }}
+    repository: {{ .PrivateRegistry }}/module-operator
     {{- end }}
-    - chartName: verrazzano-module-operator
-      namespace: verrazzano-module-operator
-      releaseName: verrazzano-module-operator
-      repoURL: charts/operators/verrazzano-module-operator/
-      local: true
-      valuesTemplate: |
-        image:
-          repository: ghcr.io/verrazzano/verrazzano-module-operator
-          pullPolicy: IfNotPresent
-          tag: v0.1.0-20230524143118-e7e9f187
   machineTemplate:
     infrastructureRef:
-      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       kind: OCIMachineTemplate
       name: {{.Name}}-{{.ControlPlaneHash}}-control-plane
       namespace: {{.Namespace}}
@@ -45,7 +37,7 @@ spec:
           - 127.0.0.1
       dns:
         {{- if .PrivateRegistry }}
-        imageRepository: {{.PrivateRegistry}}
+        imageRepository: {{.PrivateRegistry}}/olcne
         {{- else }}
         imageRepository: container-registry.oracle.com/olcne
         {{- end }}
@@ -53,7 +45,7 @@ spec:
       etcd:
         local:
           {{- if .PrivateRegistry }}
-          imageRepository: {{.PrivateRegistry}}
+          imageRepository: {{.PrivateRegistry}}/olcne
           {{- else }}
           imageRepository: container-registry.oracle.com/olcne
           {{- end }}
@@ -61,7 +53,7 @@ spec:
       networking: {}
       scheduler: {}
       {{- if .PrivateRegistry }}
-      imageRepository: {{.PrivateRegistry}}
+      imageRepository: {{.PrivateRegistry}}/olcne
       {{- else }}
       imageRepository: container-registry.oracle.com/olcne
       {{- end }}

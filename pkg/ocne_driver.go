@@ -565,7 +565,11 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 			return info, fmt.Errorf("failed to install additional YAML documents on cluster %s: %v", state.Name, err)
 		}
 	}
-	
+
+	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {
+		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
+	}
+
 	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {
 		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
 	}

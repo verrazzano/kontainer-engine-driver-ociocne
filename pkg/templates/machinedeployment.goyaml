@@ -28,7 +28,7 @@ items:
               name: {{$.Name}}
           clusterName: {{$.Name}}
           infrastructureRef:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: OCIMachineTemplate
             name: {{.Name}}-{{$.NodePoolHash}}
           version: {{$.KubernetesVersion}}
