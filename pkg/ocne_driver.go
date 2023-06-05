@@ -134,7 +134,14 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The Verrazzano Version",
 		Default: &types.Default{
-			DefaultString: defaults.VerrazzanoVersion,
+			DefaultString: defaults.VerrazzanoTag,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano Tag Override",
+		Default: &types.Default{
+			DefaultString: defaults.VerrazzanoTag,
 		},
 	}
 	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{
@@ -316,7 +323,14 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "The Verrazzano Version",
 		Default: &types.Default{
-			DefaultString: defaults.VerrazzanoVersion,
+			DefaultString: defaults.VerrazzanoTag,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano Tag Override",
+		Default: &types.Default{
+			DefaultString: defaults.VerrazzanoTag,
 		},
 	}
 	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{

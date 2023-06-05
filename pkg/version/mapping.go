@@ -29,7 +29,7 @@ type Defaults struct {
 		TigeraOperator string `json:"tigera-operator" yaml:"tigera-operator"`
 	} `json:"container-images" yaml:"container-images"`
 	KubernetesVersion string `json:"-"`
-	VerrazzanoVersion string `json:"-"`
+	VerrazzanoTag     string `json:"-"`
 }
 
 func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, error) {
@@ -48,14 +48,14 @@ func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, erro
 		}
 	}
 
-	verrazzanoVersion, err := getVerrazzanoVersion(ctx, ki)
+	verrazzanoTag, err := getVerrazzanoTag(ctx, ki)
 	if err != nil {
 		return nil, err
 	}
 
 	defaults := versions[kubernetesVersion]
 	defaults.KubernetesVersion = kubernetesVersion
-	defaults.VerrazzanoVersion = verrazzanoVersion
+	defaults.VerrazzanoTag = verrazzanoTag
 	return defaults, nil
 }
 
@@ -89,7 +89,7 @@ func getVersionMapping(ctx context.Context, ki kubernetes.Interface) (map[string
 	return versions, nil
 }
 
-func getVerrazzanoVersion(ctx context.Context, ki kubernetes.Interface) (string, error) {
+func getVerrazzanoTag(ctx context.Context, ki kubernetes.Interface) (string, error) {
 	cm, err := ki.CoreV1().ConfigMaps(verrazzanoInstallNamespace).Get(ctx, verrazzanoConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {

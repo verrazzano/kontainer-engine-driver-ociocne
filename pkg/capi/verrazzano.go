@@ -54,9 +54,18 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 }
 
 func createOrUpdateVerrazzano(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
+	// Only add the verrazzano version if it has changed
 	if _, err := cruObject(ctx, di, object.Object{
 		Text: v.VerrazzanoResource,
 	}, v, func(u *unstructured.Unstructured) error {
+		versionString, b, err := unstructured.NestedString(u.Object, "status", "version")
+		// if no version found, don't force version update
+		if err != nil || !b {
+			return nil
+		}
+		if versionString == v.VerrazzanoVersion {
+			return nil
+		}
 		return unstructured.SetNestedField(u.Object, v.VerrazzanoVersion, "spec", "version")
 	}); err != nil {
 		return err
