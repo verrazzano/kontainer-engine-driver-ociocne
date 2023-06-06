@@ -273,8 +273,8 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	v.SetHashes()
 
 	// set version if not already set
-	if len(v.VerrazzanoVersion) < 1 {
-		v.VerrazzanoVersion = v.VerrazzanoTag
+	if len(v.VerrazzanoTag) < 1 {
+		v.VerrazzanoTag = v.VerrazzanoVersion
 	}
 	return nil
 }
