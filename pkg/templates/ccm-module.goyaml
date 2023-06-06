@@ -4,10 +4,10 @@
 apiVersion: platform.verrazzano.io/v1alpha1
 kind: Module
 metadata:
-    name: ccm
+    name: oci-ccm
     namespace: default
 spec:
-    moduleName: ccm
+    moduleName: oci-ccm
     targetNamespace: kube-system
     {{- if .PrivateRegistry }}
     overrides:
