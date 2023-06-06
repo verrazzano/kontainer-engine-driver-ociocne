@@ -35,10 +35,10 @@ var CCMResourceSet string
 //go:embed csiresourceset.goyaml
 var CSIResourceSet string
 
-//go:embed ccmconfigmap.goyaml
+//go:embed ccmsecret.goyaml
 var CCMConfigMap string
 
-//go:embed csiconfigmap.goyaml
+//go:embed csisecret.goyaml
 var CSIConfigMap string
 
 //go:embed ccm-module.goyaml
