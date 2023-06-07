@@ -18,8 +18,6 @@ spec:
       tag: {{ .VerrazzanoTag }}
       {{- if .PrivateRegistry }}
       repository: {{ .PrivateRegistry }}/verrazzano-platform-operator
-      {{- else }}
-      repository: ghcr.io/verrazzano/verrazzano-platform-operator
       {{- end }}
   {{- end }}
   moduleOperator:
