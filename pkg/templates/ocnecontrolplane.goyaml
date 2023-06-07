@@ -9,18 +9,20 @@ metadata:
 spec:
   {{- if .InstallVerrazzano }}
   verrazzanoPlatformOperator:
-    tag: {{ .VerrazzanoTag }}
     enabled: {{ .InstallVerrazzano }}
-    {{- if .PrivateRegistry }}
-    repository: {{ .PrivateRegistry }}/verrazzano-platform-operator
-    {{- else }}
-    repository: ghcr.io/verrazzano/verrazzano-platform-operator
-    {{- end }}
+    image:
+      tag: {{ .VerrazzanoTag }}
+      {{- if .PrivateRegistry }}
+      repository: {{ .PrivateRegistry }}/verrazzano-platform-operator
+      {{- else }}
+      repository: ghcr.io/verrazzano/verrazzano-platform-operator
+      {{- end }}
   {{- end }}
   moduleOperator:
     enabled: true
     {{- if .PrivateRegistry }}
-    repository: {{ .PrivateRegistry }}/module-operator
+    image:
+      repository: {{ .PrivateRegistry }}/module-operator
     {{- end }}
   machineTemplate:
     infrastructureRef:
