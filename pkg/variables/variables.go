@@ -271,11 +271,6 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 
 	// set hashes for controlplane updates
 	v.SetHashes()
-
-	// set version if not already set
-	if len(v.VerrazzanoTag) < 1 {
-		v.VerrazzanoTag = v.VerrazzanoVersion
-	}
 	return nil
 }
 
