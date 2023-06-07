@@ -499,6 +499,7 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 	if err := capi.NewCAPIClient().UpdateCluster(ctx, ki, di, state); err != nil {
 		return info, fmt.Errorf("failed to upgrade cluster: %v", err)
 	}
+
 	return info, nil
 }
 
