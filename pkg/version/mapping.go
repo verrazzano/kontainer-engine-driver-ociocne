@@ -11,6 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"sort"
 )
 
 const (
@@ -29,7 +30,7 @@ type Defaults struct {
 		TigeraOperator string `json:"tigera-operator" yaml:"tigera-operator"`
 	} `json:"container-images" yaml:"container-images"`
 	KubernetesVersion string `json:"-"`
-	VerrazzanoTag     string `json:"-"`
+	VerrazzanoVersion string `json:"-"`
 }
 
 func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, error) {
@@ -48,14 +49,14 @@ func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, erro
 		}
 	}
 
-	verrazzanoTag, err := getVerrazzanoTag(ctx, ki)
+	verrazzanoVersion, err := getVerrazzanoVersion(ctx, ki)
 	if err != nil {
 		return nil, err
 	}
 
 	defaults := versions[kubernetesVersion]
 	defaults.KubernetesVersion = kubernetesVersion
-	defaults.VerrazzanoTag = verrazzanoTag
+	defaults.VerrazzanoVersion = verrazzanoVersion
 	return defaults, nil
 }
 
@@ -89,7 +90,7 @@ func getVersionMapping(ctx context.Context, ki kubernetes.Interface) (map[string
 	return versions, nil
 }
 
-func getVerrazzanoTag(ctx context.Context, ki kubernetes.Interface) (string, error) {
+func getVerrazzanoVersion(ctx context.Context, ki kubernetes.Interface) (string, error) {
 	cm, err := ki.CoreV1().ConfigMaps(verrazzanoInstallNamespace).Get(ctx, verrazzanoConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -105,12 +106,16 @@ func getVerrazzanoTag(ctx context.Context, ki kubernetes.Interface) (string, err
 		return "", nil
 	}
 
-	var versionsList []string
-	if err := json.Unmarshal([]byte(verrazzanoVersions), &versionsList); err != nil {
+	versionMapping := map[string]string{}
+	if err := json.Unmarshal([]byte(verrazzanoVersions), &versionMapping); err != nil {
 		return "", err
 	}
-	if len(versionsList) < 1 {
-		return "", nil
+
+	var versions []string
+	for k := range versionMapping {
+		versions = append(versions, k)
 	}
-	return versionsList[0], nil
+
+	sort.Strings(versions)
+	return versions[0], nil
 }
