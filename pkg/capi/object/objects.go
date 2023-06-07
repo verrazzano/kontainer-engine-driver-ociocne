@@ -84,9 +84,6 @@ func objectList(v *variables.Variables, i include) []Object {
 	if v.InstallCCM {
 		res = append(res, ccm...)
 	}
-	if v.InstallVerrazzano {
-		res = append(res, vpo...)
-	}
 	if i.capi {
 		res = append(res, capi...)
 	}
@@ -108,11 +105,6 @@ type include struct {
 	workers      bool
 	controlplane bool
 	capi         bool
-}
-
-var vpo = []Object{
-	{Text: templates.VPOConfigMap},
-	{Text: templates.VPOResourceSet},
 }
 
 var ccm = []Object{

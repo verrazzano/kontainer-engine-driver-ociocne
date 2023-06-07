@@ -130,11 +130,18 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultBool: true,
 		},
 	}
-	driverFlag.Options[driverconst.VerrazzanoImage] = &types.Flag{
+	driverFlag.Options[driverconst.VerrazzanoVersion] = &types.Flag{
 		Type:  types.StringType,
-		Usage: "The Verrazzano Platform Operator Image",
+		Usage: "The Verrazzano Version",
 		Default: &types.Default{
-			DefaultString: variables.DefaultVerrazzanoImage,
+			DefaultString: defaults.VerrazzanoTag,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano Tag Override",
+		Default: &types.Default{
+			DefaultString: defaults.VerrazzanoTag,
 		},
 	}
 	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{
@@ -311,6 +318,34 @@ func (d *OCIOCNEDriver) GetDriverUpdateOptions(ctx context.Context) (*types.Driv
 
 	driverFlag := types.DriverFlags{
 		Options: make(map[string]*types.Flag),
+	}
+	driverFlag.Options[driverconst.VerrazzanoVersion] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano Version",
+		Default: &types.Default{
+			DefaultString: defaults.VerrazzanoTag,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoTag] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano Tag Override",
+		Default: &types.Default{
+			DefaultString: defaults.VerrazzanoTag,
+		},
+	}
+	driverFlag.Options[driverconst.VerrazzanoResource] = &types.Flag{
+		Type:  types.StringType,
+		Usage: "The Verrazzano resource to install on the managed cluster",
+		Default: &types.Default{
+			DefaultString: variables.DefaultVerrazzanoResource,
+		},
+	}
+	driverFlag.Options[driverconst.InstallVerrazzano] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Install Verrazzano addon",
+		Default: &types.Default{
+			DefaultBool: true,
+		},
 	}
 	driverFlag.Options[driverconst.NumControlPlaneNodes] = &types.Flag{
 		Type:  types.IntType,
@@ -543,6 +578,10 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		if err := capiClient.CreateOrUpdateYAMLDocuments(ctx, managedDI, state); err != nil {
 			return info, fmt.Errorf("failed to install additional YAML documents on cluster %s: %v", state.Name, err)
 		}
+	}
+
+	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {
+		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
 	}
 
 	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {

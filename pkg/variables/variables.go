@@ -30,7 +30,6 @@ const (
 	ProviderId                     = `oci://{{ ds["id"] }}`
 
 	DefaultCNEPath            = "olcne"
-	DefaultVerrazzanoImage    = "ghcr.io/verrazzano/verrazzano-platform-operator:v1.5.2-20230315235330-0326ee67"
 	DefaultVerrazzanoResource = `apiVersion: install.verrazzano.io/v1beta1
 kind: Verrazzano
 metadata:
@@ -118,7 +117,8 @@ type (
 		// Addons, images, and registries
 		InstallVerrazzano  bool
 		VerrazzanoResource string
-		VerrazzanoImage    string
+		VerrazzanoVersion  string
+		VerrazzanoTag      string
 		InstallCalico      bool
 		InstallCCM         bool
 		CalicoImagePath    string
@@ -191,7 +191,8 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		PrivateRegistry: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.PrivateRegistry, "privateRegistry").(string),
 
 		// Verrazzano settings
-		VerrazzanoImage:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoImage, "verrazzanoImage").(string),
+		VerrazzanoTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoTag, "verrazzanoTag").(string),
+		VerrazzanoVersion:  options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoVersion, "verrazzanoVersion").(string),
 		VerrazzanoResource: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoResource, "verrazzanoResource").(string),
 		InstallVerrazzano:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installVerrazzano").(bool),
 
@@ -212,6 +213,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 	return v, nil
 }
 
+// SetUpdateValues are the values potentially changed during an update operation
 func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error {
 	v.KubernetesVersion = vNew.KubernetesVersion
 	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
@@ -229,16 +231,23 @@ func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error 
 	v.ETCDImageTag = vNew.ETCDImageTag
 	v.CoreDNSImageTag = vNew.CoreDNSImageTag
 	v.PrivateRegistry = vNew.PrivateRegistry
+	v.InstallVerrazzano = vNew.InstallVerrazzano
+	v.VerrazzanoTag = vNew.VerrazzanoTag
+	v.VerrazzanoVersion = vNew.VerrazzanoVersion
+	v.VerrazzanoResource = vNew.VerrazzanoResource
 	return v.SetDynamicValues(ctx)
 }
 
-// SetDynamicValues sets dynamic values from OCI in the Variables
+// SetDynamicValues sets dynamic values
 func (v *Variables) SetDynamicValues(ctx context.Context) error {
+	// deserialize node pools
 	nodePools, err := v.ParseNodePools()
 	if err != nil {
 		return err
 	}
 	v.NodePools = nodePools
+
+	// setup OCI client for dynamic values
 	ki, err := k8s.InjectedInterface()
 	if err != nil {
 		return err
@@ -246,18 +255,27 @@ func (v *Variables) SetDynamicValues(ctx context.Context) error {
 	if err := SetupOCIAuth(ctx, ki, v); err != nil {
 		return err
 	}
-
 	ociClient, err := OCIClientGetter(v)
+
 	if err != nil {
 		return err
 	}
+	// get image OCID from OCI
 	if err := v.setImageId(ctx, ociClient); err != nil {
 		return err
 	}
+	// get subnet metadata from OCI
 	if err := v.setSubnets(ctx, ociClient); err != nil {
 		return err
 	}
+
+	// set hashes for controlplane updates
 	v.SetHashes()
+
+	// set version if not already set
+	if len(v.VerrazzanoTag) < 1 {
+		v.VerrazzanoTag = v.VerrazzanoVersion
+	}
 	return nil
 }
 

@@ -30,8 +30,8 @@ v1.25.7:
 func TestLoadDefaults(t *testing.T) {
 	ki := fake.NewSimpleClientset(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
-			Namespace: configMapNamespace,
+			Name:      ocneConfigMapName,
+			Namespace: ocneConfigMapNamespace,
 		},
 		Data: map[string]string{
 			"mapping": testCMData,

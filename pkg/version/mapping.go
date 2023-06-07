@@ -5,6 +5,7 @@ package version
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -13,8 +14,10 @@ import (
 )
 
 const (
-	configMapName      = "ocne-metadata"
-	configMapNamespace = "verrazzano-capi"
+	ocneConfigMapName          = "ocne-metadata"
+	ocneConfigMapNamespace     = "verrazzano-capi"
+	verrazzanoInstallNamespace = "verrazzano-install"
+	verrazzanoConfigMapName    = "verrazzano-meta"
 )
 
 type Defaults struct {
@@ -26,6 +29,7 @@ type Defaults struct {
 		TigeraOperator string `json:"tigera-operator" yaml:"tigera-operator"`
 	} `json:"container-images" yaml:"container-images"`
 	KubernetesVersion string `json:"-"`
+	VerrazzanoTag     string `json:"-"`
 }
 
 func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, error) {
@@ -44,13 +48,19 @@ func LoadDefaults(ctx context.Context, ki kubernetes.Interface) (*Defaults, erro
 		}
 	}
 
+	verrazzanoTag, err := getVerrazzanoTag(ctx, ki)
+	if err != nil {
+		return nil, err
+	}
+
 	defaults := versions[kubernetesVersion]
 	defaults.KubernetesVersion = kubernetesVersion
+	defaults.VerrazzanoTag = verrazzanoTag
 	return defaults, nil
 }
 
 func getVersionMapping(ctx context.Context, ki kubernetes.Interface) (map[string]*Defaults, error) {
-	cm, err := ki.CoreV1().ConfigMaps(configMapNamespace).Get(ctx, configMapName, metav1.GetOptions{})
+	cm, err := ki.CoreV1().ConfigMaps(ocneConfigMapNamespace).Get(ctx, ocneConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		// no defaults known
 		if apierrors.IsNotFound(err) {
@@ -77,4 +87,30 @@ func getVersionMapping(ctx context.Context, ki kubernetes.Interface) (map[string
 		return nil, nil
 	}
 	return versions, nil
+}
+
+func getVerrazzanoTag(ctx context.Context, ki kubernetes.Interface) (string, error) {
+	cm, err := ki.CoreV1().ConfigMaps(verrazzanoInstallNamespace).Get(ctx, verrazzanoConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	if cm.Data == nil {
+		return "", nil
+	}
+	verrazzanoVersions := cm.Data["verrazzano-versions"]
+	if len(verrazzanoVersions) < 1 {
+		return "", nil
+	}
+
+	var versionsList []string
+	if err := json.Unmarshal([]byte(verrazzanoVersions), &versionsList); err != nil {
+		return "", err
+	}
+	if len(versionsList) < 1 {
+		return "", nil
+	}
+	return versionsList[0], nil
 }

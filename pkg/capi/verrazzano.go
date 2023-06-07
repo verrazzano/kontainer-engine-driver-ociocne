@@ -12,6 +12,7 @@ import (
 	"k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"time"
@@ -39,19 +40,37 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 		return err
 	}
 
-	// Create the Verrazzano Resource if not exists
+	// Create the Verrazzano Resource
+	if err := createOrUpdateVerrazzano(ctx, di, v); err != nil {
+		return fmt.Errorf("verrazzano install/update error: %v", err)
+	}
+	// Create the Verrazzano Managed Cluster Resource
+	if _, err := createOrUpdateObject(ctx, adminDi, object.Object{
+		Text: templates.VMC,
+	}, v); err != nil {
+		return fmt.Errorf("vmc registration error: %v", err)
+	}
+	return nil
+}
+
+func createOrUpdateVerrazzano(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
+	// Only add the verrazzano version if it has changed
 	if _, err := cruObject(ctx, di, object.Object{
 		Text: v.VerrazzanoResource,
-	}, v, false); err != nil {
-		return fmt.Errorf("install error: %v", err)
+	}, v, func(u *unstructured.Unstructured) error {
+		versionString, b, err := unstructured.NestedString(u.Object, "status", "version")
+		// if no version found, don't force version update
+		if err != nil || !b {
+			return nil
+		}
+		if versionString == v.VerrazzanoVersion {
+			return nil
+		}
+		return unstructured.SetNestedField(u.Object, v.VerrazzanoVersion, "spec", "version")
+	}); err != nil {
+		return err
 	}
 
-	// Create the Verrazzano Managed Cluster Resource if not exists
-	if _, err := cruObject(ctx, adminDi, object.Object{
-		Text: templates.VMC,
-	}, v, false); err != nil {
-		return fmt.Errorf("registration error: %v", err)
-	}
 	return nil
 }
 
