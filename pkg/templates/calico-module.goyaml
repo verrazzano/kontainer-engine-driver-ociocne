@@ -9,21 +9,20 @@ metadata:
 spec:
     moduleName: calico
     targetNamespace: default
-    overrides:
-        - values:
-              tigeraOperator:
-                  version: {{ .TigeraTag }}
-              installation:
-                  cni:
-                      type: Calico
-                  calicoNetwork:
-                      bgp: Disabled
-                      ipPools:
-                          - cidr: {{ .PodCIDR }}
-                            encapsulation: VXLAN
-                  {{- if .PrivateRegistry }}
-                  registry: {{.PrivateRegistry}}
-                  {{- else }}
-                  registry: container-registry.oracle.com
-                  {{- end }}
-                  imagePath: {{ .CalicoImagePath }}
+    values:
+        tigeraOperator:
+            version: {{ .TigeraTag }}
+        installation:
+            cni:
+                type: Calico
+            calicoNetwork:
+                bgp: Disabled
+                ipPools:
+                    - cidr: {{ .PodCIDR }}
+                      encapsulation: VXLAN
+            {{- if .PrivateRegistry }}
+            registry: {{.PrivateRegistry}}
+            {{- else }}
+            registry: container-registry.oracle.com
+            {{- end }}
+            imagePath: {{ .CalicoImagePath }}
