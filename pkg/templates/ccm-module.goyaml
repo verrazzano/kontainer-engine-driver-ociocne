@@ -10,11 +10,10 @@ spec:
     moduleName: oci-ccm
     targetNamespace: kube-system
     {{- if .PrivateRegistry }}
-    overrides:
-        - values:
-              global:
-                  oci:
-                      registry: {{.PrivateRegistry}}
-                  csi:
-                      registry: {{.PrivateRegistry}}
+    values:
+        global:
+            oci:
+                registry: {{.PrivateRegistry}}
+            csi:
+                registry: {{.PrivateRegistry}}
     {{- end }}
