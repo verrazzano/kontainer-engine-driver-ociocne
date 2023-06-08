@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/api/apps/v1"
@@ -53,6 +54,31 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	return nil
 }
 
+func (c *CAPIClient) DeleteVerrazzanoResource(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
+	if !v.InstallVerrazzano {
+		return nil
+	}
+	us, err := loadTextTemplate(object.Object{
+		Text: v.VerrazzanoResource,
+	}, *v)
+	if err != nil {
+		return err
+	}
+	if len(us) != 1 {
+		return fmt.Errorf("expected 1 Verrazzano resource from template, got %d", len(us))
+	}
+	vz := us[0]
+	err = di.Resource(gvr.Verrazzano).Namespace(vz.GetNamespace()).Delete(ctx, vz.GetName(), metav1.DeleteOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to delete Verrazzano resource: %v", err)
+	}
+
+	return c.waitForDeleteVerrazzanoResource(ctx, di, &vz)
+}
+
 func createOrUpdateVerrazzano(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
 	// Only add the verrazzano version if it has changed
 	if _, err := cruObject(ctx, di, object.Object{
@@ -97,6 +123,20 @@ func (c *CAPIClient) waitForModuleOperatorReady(ctx context.Context, ki kubernet
 
 func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
 	return c.waitForDeployment(ctx, ki, verrazzanoInstallNamespace, verrazzanoPlatformOperator)
+}
+
+func (c *CAPIClient) waitForDeleteVerrazzanoResource(ctx context.Context, di dynamic.Interface, vz *unstructured.Unstructured) error {
+	endTime := time.Now().Add(c.capiTimeout)
+	for {
+		time.Sleep(c.capiPollingInterval)
+		_, err := di.Resource(gvr.Verrazzano).Namespace(vz.GetNamespace()).Get(ctx, vz.GetName(), metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		if time.Now().After(endTime) {
+			return fmt.Errorf("timed out waiting for Verrazzano resource to be deleted")
+		}
+	}
 }
 
 func isDeploymentReady(deployment *v1.Deployment) bool {

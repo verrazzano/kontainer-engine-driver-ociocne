@@ -285,13 +285,13 @@ func (v *Variables) GetConfigurationProvider() common.ConfigurationProvider {
 }
 
 // GetCAPIClusterKubeConfig fetches the cluster's kubeconfig
-func (v *Variables) GetCAPIClusterKubeConfig(ctx context.Context, state *Variables) (*store.KubeConfig, error) {
+func (v *Variables) GetCAPIClusterKubeConfig(ctx context.Context) (*store.KubeConfig, error) {
 	client, err := k8s.InjectedInterface()
 	if err != nil {
 		return nil, err
 	}
 	kubeconfigSecretName := fmt.Sprintf(kubeconfigName, v.Name)
-	secret, err := client.CoreV1().Secrets(state.Namespace).Get(ctx, kubeconfigSecretName, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(v.Namespace).Get(ctx, kubeconfigSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
