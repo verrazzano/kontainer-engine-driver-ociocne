@@ -11,6 +11,6 @@ spec:
     matchLabels:
       cluster.x-k8s.io/cluster-name: {{.Name}}
   resources:
-    - kind: ConfigMap
+    - kind: Secret
       name: {{.Name}}-oci-csi
   strategy: Reconcile
