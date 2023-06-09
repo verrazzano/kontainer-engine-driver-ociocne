@@ -31,7 +31,7 @@ const (
 	ControlPlaneVolumeGbs = "control-plane-volume-gbs"
 
 	PrivateRegistry = "private-registry"
-	CalicoImagePath = "calico-image-path"
+	CNEPath         = "cne-path"
 	// TigeraTag used to determine version of tigera operator
 	TigeraTag     = "tigera-image-tag"
 	ETCDTag       = "etcd-image-tag"
