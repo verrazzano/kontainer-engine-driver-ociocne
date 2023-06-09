@@ -61,14 +61,14 @@ func (d *OCIOCNEDriver) Remove(ctx context.Context, info *types.ClusterInfo) err
 	if err != nil {
 		return fmt.Errorf("failed to managed cluster dynamic client: %v", err)
 	}
-	if err := capi.NewCAPIClient().DeleteVerrazzanoResource(ctx, managedDi, state); err != nil {
-		return err
-	}
-	client, err := k8s.InjectedDynamic()
+	adminDi, err := k8s.InjectedDynamic()
 	if err != nil {
+		return fmt.Errorf("failed to created admin cluster dynamic client: %v", err)
+	}
+	if err := capi.NewCAPIClient().DeleteVerrazzanoResources(ctx, managedDi, adminDi, state); err != nil {
 		return err
 	}
-	return capi.DeleteCluster(ctx, client, state)
+	return capi.DeleteCluster(ctx, adminDi, state)
 }
 
 // GetDriverCreateOptions implements driver interface
@@ -120,7 +120,7 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 		Type:  types.StringType,
 		Usage: "Private Registry URL",
 	}
-	driverFlag.Options[driverconst.CalicoImagePath] = &types.Flag{
+	driverFlag.Options[driverconst.CNEPath] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The repository path to use for calico cni images",
 		Default: &types.Default{

@@ -12,6 +12,13 @@ spec:
     values:
         tigeraOperator:
             version: {{ .TigeraTag }}
+            {{- if .PrivateRegistry }}
+            registry: {{.PrivateRegistry}}/{{.CNEPath}}
+            {{- end }}
+        {{- if .PrivateRegistry }}
+        calicoctl:
+            registry: {{.PrivateRegistry}}/{{.CNEPath}}
+        {{- end }}
         installation:
             cni:
                 type: Calico
@@ -25,4 +32,4 @@ spec:
             {{- else }}
             registry: container-registry.oracle.com
             {{- end }}
-            imagePath: {{ .CalicoImagePath }}
+            imagePath: {{.CNEPath}}

@@ -121,7 +121,7 @@ type (
 		VerrazzanoTag      string
 		InstallCalico      bool
 		InstallCCM         bool
-		CalicoImagePath    string
+		CNEPath            string
 		TigeraTag          string
 		ETCDImageTag       string
 		CoreDNSImageTag    string
@@ -180,7 +180,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		ApplyYAMLS:              options.GetValueFromDriverOptions(driverOptions, types.StringSliceType, driverconst.ApplyYAMLs, "applyYamls").(*types.StringSlice).Value,
 
 		// Image settings
-		CalicoImagePath: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CalicoImagePath, "calicoImagePath").(string),
+		CNEPath:         options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CNEPath, "cnePath").(string),
 		TigeraTag:       options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.TigeraTag, "tigeraImageTag").(string),
 		ETCDImageTag:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ETCDTag, "etcdImageTag").(string),
 		CoreDNSImageTag: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CoreDNSTag, "corednsImageTag").(string),

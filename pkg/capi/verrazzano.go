@@ -12,6 +12,7 @@ import (
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	"k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -21,6 +22,7 @@ import (
 
 const (
 	verrazzanoInstallNamespace = "verrazzano-install"
+	verrazzanoMCNamespace      = "verrazzano-mc"
 	verrazzanoPlatformOperator = "verrazzano-platform-operator"
 	verrazzanoModuleOperator   = "verrazzano-module-operator"
 )
@@ -48,16 +50,37 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	// Create the Verrazzano Managed Cluster Resource
 	if _, err := createOrUpdateObject(ctx, adminDi, object.Object{
 		Text: templates.VMC,
-	}, v); err != nil {
+	}, v); err != nil && !meta.IsNoMatchError(err) {
+		// IsNoMatchError ignored in case cluster-operator not installed, and the VMC CRD is not present
 		return fmt.Errorf("vmc registration error: %v", err)
 	}
 	return nil
 }
 
-func (c *CAPIClient) DeleteVerrazzanoResource(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
+// DeleteVerrazzanoResources deletes the Verrazzano resource on the managed cluster, and the VerrazzanoManagedCluster on the admin cluster
+func (c *CAPIClient) DeleteVerrazzanoResources(ctx context.Context, managedDi, adminDi dynamic.Interface, v *variables.Variables) error {
 	if !v.InstallVerrazzano {
 		return nil
 	}
+	if err := deleteVMC(ctx, adminDi, v); err != nil {
+		return err
+	}
+	return c.deleteVZ(ctx, managedDi, v)
+}
+
+func deleteVMC(ctx context.Context, adminDi dynamic.Interface, v *variables.Variables) error {
+	// Clean up the admin cluster VMC
+	err := adminDi.Resource(gvr.VerrazzanoManagedCluster).Namespace(verrazzanoMCNamespace).Delete(ctx, v.Name, metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
+		// IsNoMatchError ignored in case cluster-operator not installed, and the VMC CRD is not present
+		return fmt.Errorf("failed to delete Verrazzano Managed cluster: %v", err)
+	}
+
+	return nil
+}
+
+func (c *CAPIClient) deleteVZ(ctx context.Context, managedDi dynamic.Interface, v *variables.Variables) error {
+	// Load the VZ from template and clean the managed cluster VZ
 	us, err := loadTextTemplate(object.Object{
 		Text: v.VerrazzanoResource,
 	}, *v)
@@ -68,7 +91,7 @@ func (c *CAPIClient) DeleteVerrazzanoResource(ctx context.Context, di dynamic.In
 		return fmt.Errorf("expected 1 Verrazzano resource from template, got %d", len(us))
 	}
 	vz := us[0]
-	err = di.Resource(gvr.Verrazzano).Namespace(vz.GetNamespace()).Delete(ctx, vz.GetName(), metav1.DeleteOptions{})
+	err = managedDi.Resource(gvr.Verrazzano).Namespace(vz.GetNamespace()).Delete(ctx, vz.GetName(), metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -76,7 +99,8 @@ func (c *CAPIClient) DeleteVerrazzanoResource(ctx context.Context, di dynamic.In
 		return fmt.Errorf("failed to delete Verrazzano resource: %v", err)
 	}
 
-	return c.waitForDeleteVerrazzanoResource(ctx, di, &vz)
+	// Wait for VZ to be deleted on managed cluster before returning
+	return c.waitForDeleteVerrazzanoResource(ctx, managedDi, &vz)
 }
 
 func createOrUpdateVerrazzano(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
