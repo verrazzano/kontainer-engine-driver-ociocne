@@ -53,6 +53,17 @@ func (d *OCIOCNEDriver) Remove(ctx context.Context, info *types.ClusterInfo) err
 	if err != nil {
 		return err
 	}
+	managedClusterKubeConfig, err := getManagedClusterKubeConfig(ctx, state)
+	if err != nil {
+		return fmt.Errorf("failed to get managed cluster kubeconfig: %v", err)
+	}
+	managedDi, err := k8s.NewDynamicForKubeconfig(managedClusterKubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to managed cluster dynamic client: %v", err)
+	}
+	if err := capi.NewCAPIClient().DeleteVerrazzanoResource(ctx, managedDi, state); err != nil {
+		return err
+	}
 	client, err := k8s.InjectedDynamic()
 	if err != nil {
 		return err
@@ -504,7 +515,7 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 	if err != nil {
 		return info, err
 	}
-	capiClusterKubeConfig, err := state.GetCAPIClusterKubeConfig(ctx, state)
+	capiClusterKubeConfig, err := state.GetCAPIClusterKubeConfig(ctx)
 	if err != nil {
 		return info, err
 	}
@@ -538,7 +549,7 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 
 	kubeConfigBytes, err := yaml.Marshal(&capiClusterKubeConfig)
 	if err != nil {
-		return info, fmt.Errorf("error marshaling internalConfig: %v", err)
+		return info, fmt.Errorf("failed to get managed cluster kubeconfig: %v", err)
 	}
 
 	managedKI, err := k8s.NewInterfaceForKubeconfig(kubeConfigBytes)
@@ -822,4 +833,12 @@ func loadDefaults(ctx context.Context) (*version.Defaults, error) {
 		return nil, fmt.Errorf("failed to load default values: %v", err)
 	}
 	return defaults, nil
+}
+
+func getManagedClusterKubeConfig(ctx context.Context, state *variables.Variables) ([]byte, error) {
+	capiClusterKubeConfig, err := state.GetCAPIClusterKubeConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return yaml.Marshal(&capiClusterKubeConfig)
 }
