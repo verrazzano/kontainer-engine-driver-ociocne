@@ -12,6 +12,13 @@ spec:
     values:
         tigeraOperator:
             version: {{ .TigeraTag }}
+            {{- if .PrivateRegistry }}
+            registry: {{.PrivateRegistry}}/olcne
+            {{- end }}
+        {{- if .PrivateRegistry }}
+        calicoctl:
+            registry: {{.PrivateRegistry}}/olcne
+        {{- end }}
         installation:
             cni:
                 type: Calico
