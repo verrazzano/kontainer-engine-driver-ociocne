@@ -15,7 +15,7 @@ import (
 	"text/template"
 )
 
-//toObjects adapts a slice of yaml documents into an object array
+// toObjects adapts a slice of yaml documents into an object array
 func toObjects(yamlDocuments []string) []object.Object {
 	var objects []object.Object
 	for _, document := range yamlDocuments {
@@ -33,6 +33,28 @@ func toObjects(yamlDocuments []string) []object.Object {
 func loadTextTemplate(o object.Object, variables variables.Variables) ([]unstructured.Unstructured, error) {
 	t, err := template.New("objectText").Funcs(template.FuncMap{
 		"contains": strings.Contains,
+		"nindent": func(indent int, s string) string {
+			spacing := strings.Repeat(" ", indent)
+			split := strings.FieldsFunc(s, func(r rune) bool {
+				switch r {
+				case '\n', '\v', '\f', '\r':
+					return true
+				default:
+					return false
+				}
+			})
+			sb := strings.Builder{}
+			for i := 0; i < len(split); i++ {
+				segment := split[i]
+				sb.WriteString(spacing)
+				sb.WriteString(strings.TrimSpace(segment))
+				if i < len(split)-1 {
+					sb.WriteRune('\n')
+				}
+			}
+
+			return sb.String()
+		},
 	}).Parse(o.Text)
 	if err != nil {
 		return nil, err

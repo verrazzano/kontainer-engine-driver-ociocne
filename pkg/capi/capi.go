@@ -83,7 +83,7 @@ func createOrUpdateCAPISecret(ctx context.Context, v *variables.Variables, clien
 		ociFingerprintField:          []byte(v.Fingerprint),
 		ociRegionField:               []byte(v.Region),
 		ociPassphraseField:           []byte(v.PrivateKeyPassphrase),
-		ociKeyField:                  []byte(strings.TrimSpace(strings.ReplaceAll(v.PrivateKey, "\\n", "\n"))),
+		ociKeyField:                  []byte(strings.TrimSpace(v.PrivateKey)),
 		ociUseInstancePrincipalField: []byte("false"),
 	}
 	current, err := client.CoreV1().Secrets(v.CAPIOCINamespace).Get(ctx, v.CAPICredentialName, metav1.GetOptions{})

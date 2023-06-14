@@ -280,7 +280,7 @@ func (v *Variables) GetConfigurationProvider() common.ConfigurationProvider {
 	if len(v.PrivateKeyPassphrase) > 0 {
 		passphrase = &v.PrivateKeyPassphrase
 	}
-	privateKey := strings.TrimSpace(strings.ReplaceAll(v.PrivateKey, "\\n", "\n"))
+	privateKey := strings.TrimSpace(v.PrivateKey)
 	return common.NewRawConfigurationProvider(v.Tenancy, v.User, v.Region, v.Fingerprint, privateKey, passphrase)
 }
 
@@ -436,7 +436,7 @@ func SetupOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables
 	v.Tenancy = string(cc.Data["ocicredentialConfig-tenancyId"])
 	v.PrivateKeyPassphrase = string(cc.Data["ocicredentialConfig-passphrase"])
 	v.PrivateKey = string(cc.Data["ocicredentialConfig-privateKeyContents"])
-	v.PrivateKey = strings.Replace(v.PrivateKey, "\n", "\\n", -1)
+	v.PrivateKey = v.PrivateKey
 	return nil
 }
 
