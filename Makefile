@@ -36,6 +36,10 @@ build:
 	mkdir -p ${DIST_DIR}
 	GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o ${DIST_DIR}/${BINARY_NAME}-linux .
 
+.PHONY: sha256sum
+sha256sum: build
+	shasum -a 256 dist/kontainer-engine-driver-ociocne-linux
+
 .PHONY: shasum
 shasum: build
 	sha256sum dist/kontainer-engine-driver-ociocne-linux

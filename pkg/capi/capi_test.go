@@ -32,6 +32,10 @@ metadata:
     cluster.x-k8s.io/control-plane: ""
     cluster.x-k8s.io/control-plane-name: test
   namespace: test`
+	testKey = `aaa
+bbb
+ccc
+ddd`
 )
 
 var (
@@ -98,7 +102,7 @@ func TestRenderObjects(t *testing.T) {
 		PodCIDR:                 "192.168.0.0/16",
 		ClusterCIDR:             "10.0.0.0/12",
 		Fingerprint:             "fingerprint",
-		PrivateKey:              "xyz",
+		PrivateKey:              testKey,
 		PrivateKeyPassphrase:    "",
 		Region:                  "xyz",
 		Tenancy:                 "xyz",
