@@ -427,7 +427,6 @@ func SetupOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables
 	v.Tenancy = string(cc.Data["ocicredentialConfig-tenancyId"])
 	v.PrivateKeyPassphrase = string(cc.Data["ocicredentialConfig-passphrase"])
 	v.PrivateKey = string(cc.Data["ocicredentialConfig-privateKeyContents"])
-	v.PrivateKey = v.PrivateKey
 	return nil
 }
 
