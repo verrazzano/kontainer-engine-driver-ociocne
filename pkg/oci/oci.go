@@ -76,7 +76,7 @@ func (c *ClientImpl) GetSubnetById(ctx context.Context, subnetId string) (*core.
 
 // SubnetAccess returns public or private, depending on a subnet's access type
 func SubnetAccess(subnet core.Subnet) string {
-	if subnet.ProhibitPublicIpOnVnic != nil && subnet.ProhibitInternetIngress != nil && *subnet.ProhibitPublicIpOnVnic == false && *subnet.ProhibitInternetIngress == false {
+	if subnet.ProhibitPublicIpOnVnic != nil && subnet.ProhibitInternetIngress != nil && !*subnet.ProhibitPublicIpOnVnic && !*subnet.ProhibitInternetIngress {
 		return subnetPublic
 	}
 	return subnetPrivate
