@@ -10,6 +10,11 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
+const (
+	subnetPrivate = "private"
+	subnetPublic  = "public"
+)
+
 // Client interface for OCI Clients
 type Client interface {
 	GetSubnetById(context.Context, string) (*core.Subnet, error)
@@ -67,4 +72,12 @@ func (c *ClientImpl) GetSubnetById(ctx context.Context, subnetId string) (*core.
 
 	subnet := response.Subnet
 	return &subnet, nil
+}
+
+// SubnetAccess returns public or private, depending on a subnet's access type
+func SubnetAccess(subnet core.Subnet) string {
+	if subnet.ProhibitPublicIpOnVnic != nil && subnet.ProhibitInternetIngress != nil && *subnet.ProhibitPublicIpOnVnic == false && *subnet.ProhibitInternetIngress == false {
+		return subnetPublic
+	}
+	return subnetPrivate
 }
