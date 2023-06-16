@@ -17,7 +17,6 @@ import (
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"net"
 	"strings"
 )
 
@@ -404,18 +403,10 @@ func getSubnetById(ctx context.Context, client oci.Client, subnetId, role string
 		return nil, fmt.Errorf("failed to get subnet %s", subnetId)
 	}
 
-	ip, _, err := net.ParseCIDR(*sn.CidrBlock)
-	if err != nil {
-		return nil, err
-	}
-	var addressType = "public"
-	if ip.IsPrivate() {
-		addressType = "private"
-	}
 	return &Subnet{
 		Id:   subnetId,
 		CIDR: *sn.CidrBlock,
-		Type: addressType,
+		Type: oci.SubnetAccess(*sn),
 		Name: role,
 		Role: role,
 	}, nil
