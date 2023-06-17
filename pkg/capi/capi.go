@@ -53,8 +53,8 @@ func NewCAPIClient() *CAPIClient {
 	}
 }
 
-func (c *CAPIClient) DeleteHangingResources(ctx context.Context, p dynamic.Interface, cruResult *CreateOrUpdateResult, namespace string) error {
-	return deleteWorkerObjects(ctx, p, cruResult, namespace)
+func (c *CAPIClient) DeleteHangingResources(ctx context.Context, p dynamic.Interface, v *variables.Variables) error {
+	return deleteWorkerObjects(ctx, p, v.Namespace, v)
 }
 
 func (c *CAPIClient) CreateOrUpdateYAMLDocuments(ctx context.Context, managedDi dynamic.Interface, v *variables.Variables) error {
@@ -207,7 +207,7 @@ func deleteIfExists(ctx context.Context, di dynamic.Interface, gvr schema.GroupV
 	return nil
 }
 
-func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, namespace string) error {
+func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, namespace string, v *variables.Variables) error {
 	fieldSelector := fmt.Sprintf("metadata.namespace=%s", namespace)
 	// cleanup machine deployments
 	mds, err := di.Resource(gvr.MachineDeployment).List(ctx, metav1.ListOptions{
@@ -220,24 +220,28 @@ func deleteWorkerObjects(ctx context.Context, di dynamic.Interface, cruResult *C
 	// Delete unused machinedeployments
 	for _, md := range mds.Items {
 		// delete any machine deployments that were not in the CRU
-		_, err := deleteIfNotCRU(ctx, di, cruResult, &md)
+		deleted, err := deleteIfNotCRU(ctx, di, v, &md)
 		if err != nil {
 			return err
 		}
-		// delete associated ocimachinetemplate if it exists
-		templateName, err := object.NestedField(md.Object, "spec", "template", "spec", "infrastructureRef", "name")
-		if ociMachineTemplate, ok := templateName.(string); ok && err == nil {
-			if err := deleteIfExists(ctx, di, gvr.OCIMachineTemplate, ociMachineTemplate, namespace); err != nil {
-				return err
+		if deleted {
+			// delete associated ocimachinetemplate if it exists
+			templateName, err := object.NestedField(md.Object, "spec", "template", "spec", "infrastructureRef", "name")
+			if ociMachineTemplate, ok := templateName.(string); ok && err == nil {
+				if err := deleteIfExists(ctx, di, gvr.OCIMachineTemplate, ociMachineTemplate, namespace); err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
 }
 
-func deleteIfNotCRU(ctx context.Context, di dynamic.Interface, cruResult *CreateOrUpdateResult, u *unstructured.Unstructured) (bool, error) {
-	if !cruResult.Contains(object.GVR(u).Resource, u) {
-		return true, deleteUnstructureds(ctx, di, []unstructured.Unstructured{*u})
+func deleteIfNotCRU(ctx context.Context, di dynamic.Interface, v *variables.Variables, u *unstructured.Unstructured) (bool, error) {
+	for _, np := range v.NodePools {
+		if np.Name == u.GetName() {
+			return false, nil
+		}
 	}
-	return false, nil
+	return true, deleteUnstructureds(ctx, di, []unstructured.Unstructured{*u})
 }
