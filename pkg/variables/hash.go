@@ -42,7 +42,13 @@ func (v *Variables) SetNodePoolHash() {
 	b.WriteString(v.KubernetesVersion)
 	b.WriteString(v.SSHPublicKey)
 	b.WriteString(v.ActualImage)
-	b.WriteString(strings.Join(v.RawNodePools, ""))
+	// changing node pool replicas does not require a new template hash, since it is a scale up/scale down
+	for _, np := range v.NodePools {
+		b.WriteString(np.Name)
+		b.WriteString(np.Shape)
+		b.WriteString(fmt.Sprintf("%d", np.Memory))
+		b.WriteString(fmt.Sprintf("%d", np.Ocpus))
+	}
 	b.WriteString(fmt.Sprintf("%v", v.NodePVTransitEncryption))
 	v.NodePoolHash = hashSum(b.String())
 }
