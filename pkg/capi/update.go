@@ -32,12 +32,9 @@ func (c *CAPIClient) UpdateCluster(ctx context.Context, ki kubernetes.Interface,
 	}
 
 	// update the worker nodes
-	workerResult, err := createOrUpdateObjects(ctx, di, object.Workers, v)
+	_, err := createOrUpdateObjects(ctx, di, object.Workers, v)
 	if err != nil {
 		return fmt.Errorf("error updating workers: %v", err)
-	}
-	if err := c.DeleteHangingResources(ctx, di, workerResult, v.Namespace); err != nil {
-		return err
 	}
 	if err := c.WaitForCAPIClusterReady(ctx, di, v); err != nil {
 		return err
@@ -48,5 +45,8 @@ func (c *CAPIClient) UpdateCluster(ctx context.Context, ki kubernetes.Interface,
 		return fmt.Errorf("error updating cluster resources: %v", err)
 	}
 
-	return c.WaitForCAPIClusterReady(ctx, di, v)
+	if err := c.WaitForCAPIClusterReady(ctx, di, v); err != nil {
+		return err
+	}
+	return c.DeleteHangingResources(ctx, di, v)
 }
