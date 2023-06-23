@@ -16,7 +16,7 @@ spec:
       metadata:
         ssh_authorized_keys: {{.SSHPublicKey}}
       shape: {{.ControlPlaneShape}}
-      {{- if or .ControlPlaneOCPUs .ControlPlaneMemoryGbs }}
+      {{- if contains .Shape "Flex" }}
       shapeConfig:
         {{- if .ControlPlaneOCPUs }}
         ocpus: "{{.ControlPlaneOCPUs}}"
