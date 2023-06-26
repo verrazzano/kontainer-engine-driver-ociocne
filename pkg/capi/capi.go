@@ -67,11 +67,7 @@ func (c *CAPIClient) CreateOrUpdateAllObjects(ctx context.Context, kubernetesInt
 	if err := createOrUpdateCAPISecret(ctx, v, kubernetesInterface); err != nil {
 		return nil, fmt.Errorf("failed to create CAPI credentials: %v", err)
 	}
-	cruResult, err := createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
-	if err != nil {
-		return cruResult, err
-	}
-	return cruResult, c.WaitForCAPIClusterReady(ctx, dynamicInterface, v)
+	return createOrUpdateObjects(ctx, dynamicInterface, object.CreateObjects(v), v)
 }
 
 // createOrUpdateCAPISecret creates the CAPI secret if it does not already exist
