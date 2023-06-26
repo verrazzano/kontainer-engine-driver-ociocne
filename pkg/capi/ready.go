@@ -5,6 +5,7 @@ package capi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
@@ -14,6 +15,23 @@ import (
 	"k8s.io/client-go/dynamic"
 	"time"
 )
+
+func IsCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
+	cluster, err := client.Resource(gvr.Cluster).Namespace(state.Namespace).Get(ctx, state.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if isClusterReady(cluster) {
+		machinesReady, err := areMachinesReady(ctx, client, state)
+		if err != nil {
+			return errors.New("Waiting for nodes to be ready")
+		}
+		if machinesReady {
+			return nil
+		}
+	}
+	return errors.New("Waiting for cluster to be ready")
+}
 
 // WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status, and its Machines
 func (c *CAPIClient) WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {

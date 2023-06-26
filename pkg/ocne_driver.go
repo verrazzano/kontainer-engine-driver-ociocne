@@ -515,6 +515,13 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 	if err != nil {
 		return info, err
 	}
+	adminDi, err := k8s.InjectedDynamic()
+	if err != nil {
+		return info, err
+	}
+	if err := capi.IsCAPIClusterReady(ctx, adminDi, state); err != nil {
+		return info, err
+	}
 	capiClusterKubeConfig, err := state.GetCAPIClusterKubeConfig(ctx)
 	if err != nil {
 		return info, err
@@ -573,11 +580,7 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 	if err != nil {
 		return info, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
 	}
-	adminDi, err := k8s.InjectedDynamic()
-	if err != nil {
-		return info, fmt.Errorf("failed to create dynamic clientset for admin cluster %s: %v", state.Name, err)
-	}
-
+	
 	capiClient := capi.NewCAPIClient()
 	if len(state.ApplyYAMLS) > 0 {
 		d.Logger.Infof("Installing additional YAML documents on cluster %s", state.Name)
