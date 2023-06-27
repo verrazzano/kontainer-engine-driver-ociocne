@@ -30,6 +30,7 @@ func SetSingleNodeTaints(ctx context.Context, ki kubernetes.Interface) error {
 			}
 		}
 		node.Spec.Taints = taints
+		delete(node.Labels, "node.kubernetes.io/exclude-from-external-load-balancers")
 		_, err = ki.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
 		if err != nil {
 			return err
