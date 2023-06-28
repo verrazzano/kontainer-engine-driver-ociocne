@@ -5,6 +5,7 @@ package capi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
@@ -99,8 +100,8 @@ func (c *CAPIClient) deleteVZ(ctx context.Context, managedDi dynamic.Interface, 
 		return fmt.Errorf("failed to delete Verrazzano resource: %v", err)
 	}
 
-	// Wait for VZ to be deleted on managed cluster before returning
-	return c.waitForDeleteVerrazzanoResource(ctx, managedDi, &vz)
+	//
+	return errors.New("deleting Verrazzano resource")
 }
 
 func createOrUpdateVerrazzano(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
@@ -147,20 +148,6 @@ func (c *CAPIClient) waitForModuleOperatorReady(ctx context.Context, ki kubernet
 
 func (c *CAPIClient) waitForVerrazzanoPlatformOperator(ctx context.Context, ki kubernetes.Interface) error {
 	return c.waitForDeployment(ctx, ki, verrazzanoInstallNamespace, verrazzanoPlatformOperator)
-}
-
-func (c *CAPIClient) waitForDeleteVerrazzanoResource(ctx context.Context, di dynamic.Interface, vz *unstructured.Unstructured) error {
-	endTime := time.Now().Add(c.capiTimeout)
-	for {
-		time.Sleep(c.capiPollingInterval)
-		_, err := di.Resource(gvr.Verrazzano).Namespace(vz.GetNamespace()).Get(ctx, vz.GetName(), metav1.GetOptions{})
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		if time.Now().After(endTime) {
-			return fmt.Errorf("timed out waiting for Verrazzano resource to be deleted")
-		}
-	}
 }
 
 func isDeploymentReady(deployment *v1.Deployment) bool {

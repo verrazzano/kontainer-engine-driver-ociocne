@@ -65,10 +65,15 @@ func (d *OCIOCNEDriver) Remove(ctx context.Context, info *types.ClusterInfo) err
 	if err != nil {
 		return fmt.Errorf("failed to created admin cluster dynamic client: %v", err)
 	}
-	if err := capi.NewCAPIClient().DeleteVerrazzanoResources(ctx, managedDi, adminDi, state); err != nil {
+	adminKi, err := k8s.InjectedInterface()
+	if err != nil {
+		return fmt.Errorf("failed to created admin cluster client: %v", err)
+	}
+	capiClient := d.NewCAPIClient()
+	if err := capiClient.DeleteVerrazzanoResources(ctx, managedDi, adminDi, state); err != nil {
 		return err
 	}
-	return capi.DeleteCluster(ctx, adminDi, state)
+	return capiClient.DeleteCluster(ctx, adminDi, adminKi, state)
 }
 
 // GetDriverCreateOptions implements driver interface
@@ -466,7 +471,7 @@ func (d *OCIOCNEDriver) Create(ctx context.Context, opts *types.DriverOptions, _
 		return clusterInfo, err
 	}
 
-	if err := doCreateOrUpdate(ctx, state); err != nil {
+	if err := d.doCreateOrUpdate(ctx, state); err != nil {
 		d.Logger.Errorf("Driver.Create: %v", err)
 		return clusterInfo, err
 	}
@@ -501,7 +506,7 @@ func (d *OCIOCNEDriver) Update(ctx context.Context, info *types.ClusterInfo, opt
 		return info, err
 	}
 
-	if err := capi.NewCAPIClient().UpdateCluster(ctx, ki, di, state); err != nil {
+	if err := d.NewCAPIClient().UpdateCluster(ctx, ki, di, state); err != nil {
 		return info, fmt.Errorf("failed to upgrade cluster: %v", err)
 	}
 
@@ -580,8 +585,8 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 	if err != nil {
 		return info, fmt.Errorf("failed to create dynamic clientset for managed cluster %s: %v", state.Name, err)
 	}
-	
-	capiClient := capi.NewCAPIClient()
+
+	capiClient := d.NewCAPIClient()
 	if len(state.ApplyYAMLS) > 0 {
 		d.Logger.Infof("Installing additional YAML documents on cluster %s", state.Name)
 		if err := capiClient.CreateOrUpdateYAMLDocuments(ctx, managedDI, state); err != nil {
@@ -634,7 +639,7 @@ func (d *OCIOCNEDriver) SetClusterSize(ctx context.Context, info *types.ClusterI
 		d.Logger.Errorf("Failed to save new node group size: %v", err)
 		return err
 	}
-	return doCreateOrUpdate(ctx, state)
+	return d.doCreateOrUpdate(ctx, state)
 }
 
 // SetVersion sets the Kubernetes Version of cluster
@@ -653,7 +658,7 @@ func (d *OCIOCNEDriver) SetVersion(ctx context.Context, info *types.ClusterInfo,
 		return err
 	}
 
-	return capi.NewCAPIClient().UpdateCluster(ctx, ki, di, state)
+	return d.NewCAPIClient().UpdateCluster(ctx, ki, di, state)
 }
 
 func (d *OCIOCNEDriver) GetCapabilities(_ context.Context) (*types.Capabilities, error) {
@@ -810,7 +815,7 @@ func (d *OCIOCNEDriver) generateServiceAccountToken(ctx context.Context, clients
 	return "", fmt.Errorf("error getting authentication token from secret: %s", secretObj.Name)
 }
 
-func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
+func (d *OCIOCNEDriver) doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
 	dynamicInterface, err := k8s.InjectedDynamic()
 	if err != nil {
 		return fmt.Errorf("failed to get dynamicInterface: %v", err)
@@ -819,7 +824,7 @@ func doCreateOrUpdate(ctx context.Context, state *variables.Variables) error {
 	if err != nil {
 		return fmt.Errorf("failed to get kubernetesInterface: %v", err)
 	}
-	_, err = capi.NewCAPIClient().CreateOrUpdateAllObjects(ctx, kubernetesInterface, dynamicInterface, state)
+	_, err = d.NewCAPIClient().CreateOrUpdateAllObjects(ctx, kubernetesInterface, dynamicInterface, state)
 	if err != nil {
 		return fmt.Errorf("failed to create objects: %v", err)
 	}
@@ -844,4 +849,8 @@ func getManagedClusterKubeConfig(ctx context.Context, state *variables.Variables
 		return nil, err
 	}
 	return yaml.Marshal(&capiClusterKubeConfig)
+}
+
+func (d *OCIOCNEDriver) NewCAPIClient() *capi.CAPIClient {
+	return capi.NewCAPIClient(d.Logger)
 }
