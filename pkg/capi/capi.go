@@ -5,11 +5,13 @@ package capi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/templates"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
+	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,14 +44,17 @@ type CAPIClient struct {
 
 	verrazzanoTimeout         time.Duration
 	verrazzanoPollingInterval time.Duration
+
+	logger *zap.SugaredLogger
 }
 
-func NewCAPIClient() *CAPIClient {
+func NewCAPIClient(logger *zap.SugaredLogger) *CAPIClient {
 	return &CAPIClient{
 		capiTimeout:               1 * time.Hour,
 		capiPollingInterval:       30 * time.Second,
 		verrazzanoTimeout:         5 * time.Minute,
 		verrazzanoPollingInterval: 10 * time.Second,
+		logger:                    logger,
 	}
 }
 
@@ -173,17 +178,46 @@ func createIfNotExists(ctx context.Context, client dynamic.Interface, u *unstruc
 }
 
 // DeleteCluster deletes the cluster
-func DeleteCluster(ctx context.Context, client dynamic.Interface, v *variables.Variables) error {
-	deleteFromTmpl := func(o object.Object) error {
-		us, err := loadTextTemplate(o, *v)
-		if err != nil {
-			return err
-		}
-		return deleteUnstructureds(ctx, client, us)
-	}
-	return deleteFromTmpl(object.Object{
+func (c *CAPIClient) DeleteCluster(ctx context.Context, di dynamic.Interface, ki kubernetes.Interface, v *variables.Variables) error {
+	clusterTmpl := object.Object{
 		Text: templates.Cluster,
-	})
+	}
+	us, err := loadTextTemplate(clusterTmpl, *v)
+	// This error should only be hit if the Cluster YAML is syntactically incorrect, which is unlikely to happen.
+	if err != nil {
+		return errors.New("failed to delete cluster, remove cluster resources manually")
+	}
+	// There should always be exactly one cluster resource. If this is not the case, manual cleanup is necessary.
+	if len(us) != 1 {
+		return errors.New("invalid cluster, remove cluster resources manually")
+	}
+	cluster := &us[0]
+	clusterGVR := object.GVR(cluster)
+
+	get, err := di.Resource(clusterGVR).Namespace(cluster.GetNamespace()).Get(ctx, cluster.GetName(), metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		// This is most likely to be a transient or environmental error with the cluster
+		return errors.New("failed to lookup cluster during delete")
+	}
+
+	// If no cluster, delete the cluster namespace
+	if get == nil {
+		err := ki.CoreV1().Namespaces().Delete(ctx, cluster.GetName(), metav1.DeleteOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			return errors.New("failed to delete cluster namespace")
+		}
+		return nil
+	}
+
+	// Delete the cluster if not already being deleted
+	if get.GetDeletionTimestamp() == nil {
+		err := di.Resource(clusterGVR).Namespace(cluster.GetNamespace()).Delete(ctx, cluster.GetName(), metav1.DeleteOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			return errors.New("failed to delete cluster")
+		}
+	}
+	// Surface that the cluster is being deleted to the user
+	return errors.New("deleting cluster")
 }
 
 func deleteUnstructureds(ctx context.Context, di dynamic.Interface, us []unstructured.Unstructured) error {

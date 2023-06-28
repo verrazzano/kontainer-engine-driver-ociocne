@@ -10,6 +10,7 @@ import (
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -39,11 +40,6 @@ ddd`
 )
 
 var (
-	testMachineGVR = schema.GroupVersionResource{
-		Group:    "cluster.x-k8s.io",
-		Version:  "v1beta1",
-		Resource: "machines",
-	}
 	testCAPIClient = &CAPIClient{
 		capiTimeout:         0 * time.Second,
 		capiPollingInterval: 0 * time.Second,
@@ -65,7 +61,7 @@ var (
 )
 
 func TestNewCAPIClient(t *testing.T) {
-	c := NewCAPIClient()
+	c := NewCAPIClient(zap.S())
 	z := 0 * time.Second
 	assert.Greater(t, c.capiTimeout, z)
 	assert.Greater(t, c.capiPollingInterval, z)
@@ -144,24 +140,33 @@ func TestRenderObjects(t *testing.T) {
 
 func TestDeleteCluster(t *testing.T) {
 	cluster := createTestCluster(testVariables, true, true, clusterPhaseProvisioned)
+	ki := fake.NewSimpleClientset()
 	var tests = []struct {
-		name string
-		di   dynamic.Interface
+		name     string
+		di       dynamic.Interface
+		deleting bool
 	}{
 		{
 			"delete no cluster",
 			fake2.NewSimpleDynamicClient(runtime.NewScheme()),
+			false,
 		},
 		{
 			"delete with cluster",
 			fake2.NewSimpleDynamicClient(runtime.NewScheme(), cluster),
+			true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := DeleteCluster(context.TODO(), tt.di, testVariables)
-			assert.NoError(t, err)
+			err := NewCAPIClient(zap.S()).DeleteCluster(context.TODO(), tt.di, ki, testVariables)
+			if tt.deleting {
+				if err == nil {
+					assert.Fail(t, "expected progress message")
+				}
+				assert.Equal(t, "deleting cluster", err.Error())
+			}
 		})
 	}
 }
