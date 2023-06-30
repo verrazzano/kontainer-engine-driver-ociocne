@@ -45,7 +45,7 @@ func (c *CAPIClient) UpdateCluster(ctx context.Context, ki kubernetes.Interface,
 		return fmt.Errorf("error updating cluster resources: %v", err)
 	}
 
-	if err := c.WaitForCAPIClusterReady(ctx, di, v); err != nil {
+	if err := IsCAPIClusterReady(ctx, di, v); err != nil {
 		return err
 	}
 	return c.DeleteHangingResources(ctx, di, v)

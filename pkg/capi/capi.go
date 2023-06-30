@@ -39,9 +39,6 @@ const (
 )
 
 type CAPIClient struct {
-	capiTimeout         time.Duration
-	capiPollingInterval time.Duration
-
 	verrazzanoTimeout         time.Duration
 	verrazzanoPollingInterval time.Duration
 
@@ -50,8 +47,6 @@ type CAPIClient struct {
 
 func NewCAPIClient(logger *zap.SugaredLogger) *CAPIClient {
 	return &CAPIClient{
-		capiTimeout:               1 * time.Hour,
-		capiPollingInterval:       30 * time.Second,
 		verrazzanoTimeout:         5 * time.Minute,
 		verrazzanoPollingInterval: 10 * time.Second,
 		logger:                    logger,
