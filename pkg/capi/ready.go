@@ -6,14 +6,12 @@ package capi
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/capi/object"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/variables"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
-	"time"
 )
 
 func IsCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
@@ -31,30 +29,6 @@ func IsCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *va
 		}
 	}
 	return errors.New("Waiting for cluster to be ready")
-}
-
-// WaitForCAPIClusterReady waits for the CAPI cluster resource to reach "Ready" status, and its Machines
-func (c *CAPIClient) WaitForCAPIClusterReady(ctx context.Context, client dynamic.Interface, state *variables.Variables) error {
-	endTime := time.Now().Add(c.capiTimeout)
-	for {
-		time.Sleep(c.capiPollingInterval)
-		cluster, err := client.Resource(gvr.Cluster).Namespace(state.Namespace).Get(ctx, state.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if isClusterReady(cluster) {
-			machinesReady, err := areMachinesReady(ctx, client, state)
-			if err != nil {
-				return err
-			}
-			if machinesReady {
-				return nil
-			}
-		}
-		if time.Now().After(endTime) {
-			return fmt.Errorf("timed out waiting for cluster %s to create", state.Name)
-		}
-	}
 }
 
 func isClusterReady(cluster *unstructured.Unstructured) bool {

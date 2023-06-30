@@ -40,10 +40,7 @@ ddd`
 )
 
 var (
-	testCAPIClient = &CAPIClient{
-		capiTimeout:         0 * time.Second,
-		capiPollingInterval: 0 * time.Second,
-	}
+	testCAPIClient = &CAPIClient{}
 
 	testVariables = &variables.Variables{
 		Name:              testName,
@@ -63,8 +60,6 @@ var (
 func TestNewCAPIClient(t *testing.T) {
 	c := NewCAPIClient(zap.S())
 	z := 0 * time.Second
-	assert.Greater(t, c.capiTimeout, z)
-	assert.Greater(t, c.capiPollingInterval, z)
 	assert.Greater(t, c.verrazzanoTimeout, z)
 	assert.Greater(t, c.verrazzanoPollingInterval, z)
 }
@@ -166,58 +161,6 @@ func TestDeleteCluster(t *testing.T) {
 					assert.Fail(t, "expected progress message")
 				}
 				assert.Equal(t, "deleting cluster", err.Error())
-			}
-		})
-	}
-}
-
-func TestWaitForCAPIClusterReady(t *testing.T) {
-	runningMachine := createTestMachine(testVariables, machinePhaseRunning)
-	notRunningMachine := createTestMachine(testVariables, "Error")
-	cluster := createTestCluster(testVariables, true, true, clusterPhaseProvisioned)
-	clusterCPNotReady := createTestCluster(testVariables, false, true, clusterPhaseProvisioned)
-	clusterINotReady := createTestCluster(testVariables, true, false, clusterPhaseProvisioned)
-	clusterError := createTestCluster(testVariables, true, true, "Error")
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypeWithName(listGVK(runningMachine), &unstructured.UnstructuredList{})
-	var tests = []struct {
-		name  string
-		di    dynamic.Interface
-		error bool
-	}{
-		{
-			"ready when cluster and machine are ready",
-			createTestDIWithClusterAndMachine(),
-			false,
-		},
-		{
-			"not ready when cluster ready but not all machines not ready",
-			fake2.NewSimpleDynamicClient(scheme, cluster, runningMachine, notRunningMachine),
-			true,
-		},
-		{
-			"not ready when cluster controlplane not ready",
-			fake2.NewSimpleDynamicClient(scheme, clusterCPNotReady, runningMachine),
-			true,
-		},
-		{
-			"not ready when cluster infrastructure not ready",
-			fake2.NewSimpleDynamicClient(scheme, clusterINotReady, runningMachine),
-			true,
-		},
-		{
-			"not ready when cluster phase not ready",
-			fake2.NewSimpleDynamicClient(scheme, clusterError, runningMachine),
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := testCAPIClient.WaitForCAPIClusterReady(context.TODO(), tt.di, testVariables)
-			if (err != nil) != tt.error {
-				t.Error(err)
 			}
 		})
 	}
