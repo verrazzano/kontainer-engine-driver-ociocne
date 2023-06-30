@@ -20,8 +20,10 @@ items:
           compartmentId:  {{$.CompartmentID}}
           imageId:  {{$.ActualImage}}
           isPvEncryptionInTransitEnabled: {{$.NodePVTransitEncryption}}
+          {{- if $.SSHPublicKey}}
           metadata:
             ssh_authorized_keys: {{$.SSHPublicKey}}
+          {{- end }}
           shape: {{.Shape}}
           {{- if contains .Shape "Flex" }}
           shapeConfig:
