@@ -13,8 +13,10 @@ spec:
       compartmentId:  {{.CompartmentID}}
       imageId:  {{.ActualImage}}
       isPvEncryptionInTransitEnabled: {{.NodePVTransitEncryption}}
+      {{- if .SSHPublicKey }}
       metadata:
         ssh_authorized_keys: {{.SSHPublicKey}}
+      {{- end }}
       shape: {{.ControlPlaneShape}}
       {{- if contains .ControlPlaneShape "Flex" }}
       shapeConfig:
