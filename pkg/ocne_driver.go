@@ -602,11 +602,14 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
 	}
 
-	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
-	if err := capiClient.InstallAndRegisterVerrazzano(ctx, managedKI, managedDI, adminDi, state); err != nil {
-		return info, fmt.Errorf("failed to setup Verrazzano on managed cluster %s: %v", state.Name, err)
+	if state.InstallVerrazzano {
+		d.Logger.Infof("Updating Verrazzano on cluster %v", state.Name)
+		return info, capiClient.UpdateVerrazzano(ctx, managedKI, managedDI, adminDi, state)
 	}
-	return info, nil
+
+	d.Logger.Infof("Uninstalling Verrazzano on cluster %v", state.Name)
+	return info, capiClient.DeleteVerrazzanoResources(ctx, managedDI, adminDi, state)
+
 }
 
 func (d *OCIOCNEDriver) GetClusterSize(_ context.Context, info *types.ClusterInfo) (*types.NodeCount, error) {

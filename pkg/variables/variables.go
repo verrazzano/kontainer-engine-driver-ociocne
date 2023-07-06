@@ -114,16 +114,18 @@ type (
 		SkipOCNEInstall  bool
 
 		// Addons, images, and registries
-		InstallVerrazzano  bool
-		VerrazzanoResource string
-		VerrazzanoVersion  string
-		VerrazzanoTag      string
-		InstallCalico      bool
-		InstallCCM         bool
-		CNEPath            string
-		TigeraTag          string
-		ETCDImageTag       string
-		CoreDNSImageTag    string
+		InstallVerrazzano bool
+		// Set to true during Updates
+		UninstallVerrazzano bool
+		VerrazzanoResource  string
+		VerrazzanoVersion   string
+		VerrazzanoTag       string
+		InstallCalico       bool
+		InstallCCM          bool
+		CNEPath             string
+		TigeraTag           string
+		ETCDImageTag        string
+		CoreDNSImageTag     string
 
 		// Private registry
 		PrivateRegistry string
@@ -193,7 +195,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		VerrazzanoTag:      options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoTag, "verrazzanoTag").(string),
 		VerrazzanoVersion:  options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoVersion, "verrazzanoVersion").(string),
 		VerrazzanoResource: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VerrazzanoResource, "verrazzanoResource").(string),
-		InstallVerrazzano:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallCalico, "installVerrazzano").(bool),
+		InstallVerrazzano:  options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.InstallVerrazzano, "installVerrazzano").(bool),
 
 		// Other
 		ProxyEndpoint:    options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.ProxyEndpoint, "proxyEndpoint").(string),
@@ -214,6 +216,11 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 
 // SetUpdateValues are the values potentially changed during an update operation
 func (v *Variables) SetUpdateValues(ctx context.Context, vNew *Variables) error {
+	// Uninstall Verrazzano if the new state has no Verrazzano
+	v.UninstallVerrazzano = false
+	if v.InstallVerrazzano && !vNew.InstallVerrazzano {
+		v.UninstallVerrazzano = true
+	}
 	v.KubernetesVersion = vNew.KubernetesVersion
 	v.ControlPlaneReplicas = vNew.ControlPlaneReplicas
 	v.ImageDisplayName = vNew.ImageDisplayName
