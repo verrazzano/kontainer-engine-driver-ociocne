@@ -49,3 +49,6 @@ var CalicoModule string
 
 //go:embed vmc.goyaml
 var VMC string
+
+//go:embed provisioner.goyaml
+var ProvisionerCM string

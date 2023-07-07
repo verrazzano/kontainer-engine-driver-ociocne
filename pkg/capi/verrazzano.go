@@ -58,6 +58,16 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	return nil
 }
 
+func (c *CAPIClient) CreateClusterProvisionerConfigMap(ctx context.Context, adminDi dynamic.Interface, v *variables.Variables) error {
+	// Create the provisioner config map Resource
+	if _, err := createOrUpdateObject(ctx, adminDi, object.Object{
+		Text: templates.ProvisionerCM,
+	}, v); err != nil {
+		return fmt.Errorf("provisioner configmap creation error: %v", err)
+	}
+	return nil
+}
+
 // DeleteVerrazzanoResources deletes the Verrazzano resource on the managed cluster, and the VerrazzanoManagedCluster on the admin cluster
 func (c *CAPIClient) DeleteVerrazzanoResources(ctx context.Context, managedDi, adminDi dynamic.Interface, v *variables.Variables) error {
 	if !v.InstallVerrazzano {

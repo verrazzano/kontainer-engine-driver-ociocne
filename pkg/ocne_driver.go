@@ -598,8 +598,8 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
 	}
 
-	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {
-		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
+	if err := capiClient.CreateClusterProvisionerConfigMap(ctx, managedDI, state); err != nil {
+		return info, fmt.Errorf("failed to create provisioner config map on managed cluster %s: %v", state.Name, err)
 	}
 
 	d.Logger.Infof("Installing Verrazzano on cluster %v", state.Name)
