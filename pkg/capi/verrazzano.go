@@ -36,7 +36,7 @@ func (c *CAPIClient) InstallModules(ctx context.Context, ki kubernetes.Interface
 	return err
 }
 
-func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubernetes.Interface, di, adminDi dynamic.Interface, v *variables.Variables) error {
+func (c *CAPIClient) UpdateVerrazzano(ctx context.Context, ki kubernetes.Interface, managedDi, adminDi dynamic.Interface, v *variables.Variables) error {
 	if !v.InstallVerrazzano || v.VerrazzanoResource == "" {
 		return nil
 	}
@@ -45,7 +45,7 @@ func (c *CAPIClient) InstallAndRegisterVerrazzano(ctx context.Context, ki kubern
 	}
 
 	// Create the Verrazzano Resource
-	if err := createOrUpdateVerrazzano(ctx, di, v); err != nil {
+	if err := createOrUpdateVerrazzano(ctx, managedDi, v); err != nil {
 		return fmt.Errorf("verrazzano install/update error: %v", err)
 	}
 	// Create the Verrazzano Managed Cluster Resource
@@ -70,13 +70,13 @@ func (c *CAPIClient) CreateClusterProvisionerConfigMap(ctx context.Context, admi
 
 // DeleteVerrazzanoResources deletes the Verrazzano resource on the managed cluster, and the VerrazzanoManagedCluster on the admin cluster
 func (c *CAPIClient) DeleteVerrazzanoResources(ctx context.Context, managedDi, adminDi dynamic.Interface, v *variables.Variables) error {
-	if !v.InstallVerrazzano {
-		return nil
+	if v.UninstallVerrazzano || v.InstallVerrazzano {
+		if err := deleteVMC(ctx, adminDi, v); err != nil {
+			return err
+		}
+		return c.deleteVZ(ctx, managedDi, v)
 	}
-	if err := deleteVMC(ctx, adminDi, v); err != nil {
-		return err
-	}
-	return c.deleteVZ(ctx, managedDi, v)
+	return nil
 }
 
 func deleteVMC(ctx context.Context, adminDi dynamic.Interface, v *variables.Variables) error {
@@ -111,7 +111,7 @@ func (c *CAPIClient) deleteVZ(ctx context.Context, managedDi dynamic.Interface, 
 	}
 
 	//
-	return errors.New("deleting Verrazzano resource")
+	return errors.New("uninstalling Verrazzano")
 }
 
 func createOrUpdateVerrazzano(ctx context.Context, di dynamic.Interface, v *variables.Variables) error {
