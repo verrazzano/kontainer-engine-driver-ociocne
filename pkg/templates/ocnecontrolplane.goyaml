@@ -30,7 +30,7 @@ spec:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       kind: OCIMachineTemplate
-      name: {{.Name}}-{{.ControlPlaneHash}}-control-plane-marco-was-here
+      name: {{.Name}}-{{.ControlPlaneHash}}-control-plane
       namespace: {{.Namespace}}
   replicas: {{.ControlPlaneReplicas}}
   version: {{.KubernetesVersion}}
