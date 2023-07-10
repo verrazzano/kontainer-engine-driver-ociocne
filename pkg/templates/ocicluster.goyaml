@@ -17,8 +17,6 @@ spec:
   compartmentId:  {{.CompartmentID}}
 {{- if .QuickCreateVCN }}
   networkSpec:
-    apiServerLoadBalancer:
-      loadBalancerType: "lb"
     vcn:
       name: {{.Name}}
       cidr: {{.ClusterCIDR}}
