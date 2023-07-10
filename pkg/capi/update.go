@@ -41,7 +41,7 @@ func (c *CAPIClient) UpdateCluster(ctx context.Context, ki kubernetes.Interface,
 	}
 
 	// update the remaining capi resources
-	if _, err := createOrUpdateObjects(ctx, di, object.UpdateObjects(v), v); err != nil {
+	if _, err := createOrUpdateObjects(ctx, di, object.UpdateObjects(), v); err != nil {
 		return fmt.Errorf("error updating cluster resources: %v", err)
 	}
 

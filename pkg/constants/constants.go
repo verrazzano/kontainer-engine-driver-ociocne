@@ -11,6 +11,7 @@ const (
 	NodePublicKeyContents = "node-public-key-contents"
 
 	CompartmentID       = "compartment-id"
+	QuickCreateVCN      = "quick-create-vcn"
 	VcnID               = "vcn-id"
 	WorkerNodeSubnet    = "worker-node-subnet"
 	ControlPlaneSubnet  = "control-plane-subnet"

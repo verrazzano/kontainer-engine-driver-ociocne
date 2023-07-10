@@ -171,6 +171,13 @@ func (d *OCIOCNEDriver) GetDriverCreateOptions(ctx context.Context) (*types.Driv
 			DefaultBool: true,
 		},
 	}
+	driverFlag.Options[driverconst.QuickCreateVCN] = &types.Flag{
+		Type:  types.BoolType,
+		Usage: "Quick Create VCN",
+		Default: &types.Default{
+			DefaultBool: false,
+		},
+	}
 	driverFlag.Options[driverconst.KubernetesVersion] = &types.Flag{
 		Type:  types.StringType,
 		Usage: "The Kubernetes version that will be used for your master and worker nodes e.g. v1.11.9, v1.12.7",
@@ -594,6 +601,9 @@ func (d *OCIOCNEDriver) PostCheck(ctx context.Context, info *types.ClusterInfo) 
 		}
 	}
 
+	if err := state.SetQuickCreateVCNInfo(ctx, adminDi); err != nil {
+		return info, err
+	}
 	if err := capiClient.InstallModules(ctx, managedKI, managedDI, state); err != nil {
 		return info, fmt.Errorf("failed to install modules on managed cluster %s: %v", state.Name, err)
 	}

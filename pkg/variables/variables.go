@@ -6,16 +6,20 @@ package variables
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/rancher/kontainer-engine/drivers/options"
 	"github.com/rancher/kontainer-engine/store"
 	"github.com/rancher/kontainer-engine/types"
 	driverconst "github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/constants"
+	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/gvr"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/k8s"
 	"github.com/verrazzano/kontainer-engine-driver-ociocne/pkg/oci"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"strings"
 )
@@ -79,6 +83,7 @@ type (
 		ControlPlaneHash string
 		NodePoolHash     string
 
+		QuickCreateVCN     bool
 		VCNID              string
 		WorkerNodeSubnet   string
 		ControlPlaneSubnet string
@@ -162,6 +167,7 @@ func NewFromOptions(ctx context.Context, driverOptions *types.DriverOptions) (*V
 		CompartmentID:     options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.CompartmentID, "compartmentId").(string),
 
 		// Networking
+		QuickCreateVCN:     options.GetValueFromDriverOptions(driverOptions, types.BoolType, driverconst.QuickCreateVCN, "quickCreateVcn").(bool),
 		VCNID:              options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.VcnID, "vcnId").(string),
 		WorkerNodeSubnet:   options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.WorkerNodeSubnet, "workerNodeSubnet").(string),
 		LoadBalancerSubnet: options.GetValueFromDriverOptions(driverOptions, types.StringType, driverconst.LoadBalancerSubnet, "loadBalancerSubnet").(string),
@@ -435,6 +441,63 @@ func SetupOCIAuth(ctx context.Context, client kubernetes.Interface, v *Variables
 	v.PrivateKeyPassphrase = string(cc.Data["ocicredentialConfig-passphrase"])
 	v.PrivateKey = string(cc.Data["ocicredentialConfig-privateKeyContents"])
 	return nil
+}
+
+func (v *Variables) SetQuickCreateVCNInfo(ctx context.Context, di dynamic.Interface) error {
+	// Only set Quick Create VCN Info if using Quick Create VCN, and the VCN info is unset.
+	if v.QuickCreateVCN && v.isNetworkingUnset() {
+		ociCluster, err := di.Resource(gvr.OCICluster).Namespace(v.Name).Get(ctx, v.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		// Get VCN id and VCN subnets from the OCI Cluster resource
+		vcnID, found, err := unstructured.NestedString(ociCluster.Object, "spec", "networkSpec", "vcn", "id")
+		if err != nil || !found {
+			return errors.New("waiting for VCN to be created")
+		}
+		v.VCNID = vcnID
+		subnets, found, err := unstructured.NestedSlice(ociCluster.Object, "spec", "networkSpec", "vcn", "subnets")
+		if err != nil || !found {
+			return errors.New("waiting for subnets to be created")
+		}
+
+		// For each subnet in the VCN subnet list, identify its role and populate the subnet id in the cluster state
+		for _, subnet := range subnets {
+			subnetObject, ok := subnet.(map[string]interface{})
+			if !ok {
+				return errors.New("subnet is creating")
+			}
+
+			// Get nested subnet Role and id from the subnet object
+			subnetRole, found, err := unstructured.NestedString(subnetObject, "role")
+			if err != nil || !found {
+				return errors.New("waiting for subnet role to be populated")
+			}
+			subnetId, found, err := unstructured.NestedString(subnetObject, "id")
+			if err != nil {
+				return errors.New("waiting for subnet id to be populated")
+			}
+
+			// Populate the subnet id depending on the subnet role
+			switch subnetRole {
+			case "control-plane":
+				v.ControlPlaneSubnet = subnetId
+			case "service-lb":
+				v.LoadBalancerSubnet = subnetId
+			case "worker":
+				v.WorkerNodeSubnet = subnetId
+			default: // we are not interested in any other subnets
+				continue
+			}
+		}
+	}
+
+	return nil
+}
+
+func (v *Variables) isNetworkingUnset() bool {
+	return len(v.VCNID) < 1 || len(v.ControlPlaneSubnet) < 1 || len(v.LoadBalancerSubnet) < 1 || len(v.WorkerNodeSubnet) < 1
 }
 
 func (v *Variables) cloudCredentialNameAndNamespace() (string, string) {
