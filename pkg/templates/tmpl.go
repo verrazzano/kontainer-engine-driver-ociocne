@@ -29,17 +29,11 @@ var MachineDeployment string
 //go:embed ocimachinetemplate.goyaml
 var OCIMachineTemplate string
 
-//go:embed ccmresourceset.goyaml
-var CCMResourceSet string
-
-//go:embed csiresourceset.goyaml
-var CSIResourceSet string
-
 //go:embed ccmsecret.goyaml
-var CCMConfigMap string
+var CCMSecret string
 
 //go:embed csisecret.goyaml
-var CSIConfigMap string
+var CSISecret string
 
 //go:embed ccm-module.goyaml
 var CCMModule string

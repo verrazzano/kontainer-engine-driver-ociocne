@@ -56,34 +56,31 @@ func Modules(v *variables.Variables) []Object {
 		objects = append(objects, cniModule)
 	}
 	if v.InstallCCM {
-		objects = append(objects, ccmModule)
+		objects = append(objects, ccm...)
 	}
 
 	return objects
 }
 
-func CreateObjects(v *variables.Variables) []Object {
-	return objectList(v, include{
+func CreateObjects() []Object {
+	return objectList(include{
 		workers:      true,
 		controlplane: true,
 		capi:         true,
 	})
 }
 
-func UpdateObjects(v *variables.Variables) []Object {
-	return objectList(v, include{
+func UpdateObjects() []Object {
+	return objectList(include{
 		workers:      false,
 		controlplane: false,
 		capi:         true,
 	})
 }
 
-func objectList(v *variables.Variables, i include) []Object {
+func objectList(i include) []Object {
 	var res []Object
 
-	if v.InstallCCM {
-		res = append(res, ccm...)
-	}
 	if i.capi {
 		res = append(res, capi...)
 	}
@@ -108,14 +105,9 @@ type include struct {
 }
 
 var ccm = []Object{
-	{Text: templates.CCMConfigMap},
-	{Text: templates.CCMResourceSet},
-	{Text: templates.CSIConfigMap},
-	{Text: templates.CSIResourceSet},
-}
-
-var ccmModule = Object{
-	Text: templates.CCMModule,
+	{Text: templates.CCMSecret},
+	{Text: templates.CSISecret},
+	{Text: templates.CCMModule},
 }
 
 var cniModule = Object{

@@ -125,7 +125,7 @@ func TestRenderObjects(t *testing.T) {
 		InstallCalico:     true,
 	}
 
-	os := object.CreateObjects(&v)
+	os := object.CreateObjects()
 	for _, o := range os {
 		u, err := loadTextTemplate(o, v)
 		assert.NoError(t, err)
