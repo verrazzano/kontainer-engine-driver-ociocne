@@ -30,7 +30,7 @@ items:
           infrastructureRef:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: OCIMachineTemplate
-            name: {{$.DisplayName}}-{{.Name}}-{{$.NodePoolHash}}
+            name: {{$.DisplayName}}-{{$.NodePoolHash}}
           version: {{$.KubernetesVersion}}
   {{- end }}
 {{- else }}
