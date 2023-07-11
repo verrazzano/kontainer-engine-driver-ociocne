@@ -13,7 +13,7 @@ spec:
     values:
         global:
             oci:
-                registry: {{.PrivateRegistry}}/{{.CNEPath}}
+                registry: {{.PrivateRegistry}}
             csi:
-                registry: {{.PrivateRegistry}}/{{.CNEPath}}
+                registry: {{.PrivateRegistry}}
     {{- end }}

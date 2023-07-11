@@ -51,7 +51,7 @@ spec:
           - 127.0.0.1
       dns:
         {{- if .PrivateRegistry }}
-        imageRepository: {{.PrivateRegistry}}/{{.CNEPath}}
+        imageRepository: {{.PrivateRegistry}}
         {{- else }}
         imageRepository: container-registry.oracle.com/olcne
         {{- end }}
@@ -59,7 +59,7 @@ spec:
       etcd:
         local:
           {{- if .PrivateRegistry }}
-          imageRepository: {{.PrivateRegistry}}/{{.CNEPath}}
+          imageRepository: {{.PrivateRegistry}}
           {{- else }}
           imageRepository: container-registry.oracle.com/olcne
           {{- end }}
@@ -67,7 +67,7 @@ spec:
       networking: {}
       scheduler: {}
       {{- if .PrivateRegistry }}
-      imageRepository: {{.PrivateRegistry}}/{{.CNEPath}}
+      imageRepository: {{.PrivateRegistry}}
       {{- else }}
       imageRepository: container-registry.oracle.com/olcne
       {{- end }}

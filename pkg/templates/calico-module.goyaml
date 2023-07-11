@@ -13,11 +13,11 @@ spec:
         tigeraOperator:
             version: {{ .TigeraTag }}
             {{- if .PrivateRegistry }}
-            registry: {{.PrivateRegistry}}/{{.CNEPath}}
+            registry: {{.PrivateRegistry}}
             {{- end }}
         {{- if .PrivateRegistry }}
         calicoctl:
-            registry: {{.PrivateRegistry}}/{{.CNEPath}}
+            registry: {{.PrivateRegistry}}
         {{- end }}
         installation:
             cni:
@@ -31,5 +31,5 @@ spec:
             registry: {{.PrivateRegistry}}
             {{- else }}
             registry: container-registry.oracle.com
-            {{- end }}
             imagePath: {{.CNEPath}}
+            {{- end }}
