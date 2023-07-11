@@ -9,7 +9,7 @@ items:
   - apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
     kind: OCIMachineTemplate
     metadata:
-      name:  {{.Name}}-{{$.NodePoolHash}}
+      name:  {{$.DisplayName}}-{{$.NodePoolHash}}
       namespace: {{$.Namespace}}
       labels:
         verrazzano.io/node-pool: {{.Name}}
